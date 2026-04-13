@@ -1,0 +1,14 @@
+# Copy to terraform.tfvars (gitignored) and adjust.
+# Never commit real secrets.
+
+aws_region = "us-east-1"
+
+# Optional: pin to a public subnet in your VPC (recommended if default VPC subnets are mixed).
+# vpc_id     = "vpc-xxxxxxxx"
+# subnet_id  = "subnet-xxxxxxxx"
+
+# Optional: restrict who can reach ports 3000/8000/8090/8081
+# allowed_ingress_cidrs = ["203.0.113.10/32"]
+
+# Optional: Gemini service account JSON stored in Secrets Manager
+# gemini_secret_arn = "arn:aws:secretsmanager:us-east-1:123456789012:secret:openfoam-gemini-xxxxx"

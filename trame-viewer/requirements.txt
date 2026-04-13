@@ -1,0 +1,5 @@
+trame>=3.9
+trame-vtk
+trame-vuetify
+--extra-index-url https://wheels.vtk.org
+vtk>=9.4.2

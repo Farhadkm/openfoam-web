@@ -1,0 +1,114 @@
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    volumes:
+      - mongo_data:/data/db
+    # Host binding so MongoDB Compass (and other local tools) can connect.
+    # Backend still uses mongodb://mongo:27017 on the Docker network.
+    ports:
+      - "127.0.0.1:27017:27017"
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  openfoam-runner:
+    build:
+      context: ./openfoam-runner
+    environment:
+      JOBS_ROOT: /jobs
+      OPENFOAM_IMAGE: opencfd/openfoam-run:2512
+      OPENFOAM_BASHRC: /usr/lib/openfoam/openfoam2512/etc/bashrc
+      JOBS_VOLUME_NAME: openfoam_jobs_data
+      JOBS_VOLUME_MOUNT: /work
+    volumes:
+      - jobs_data:/jobs
+      - /var/run/docker.sock:/var/run/docker.sock
+    expose:
+      - "8080"
+
+  backend:
+    build:
+      context: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      RUNNER_URL: http://openfoam-runner:8080
+      JOBS_ROOT: /jobs
+      MONGODB_URI: mongodb://mongo:27017
+      MONGODB_DB: openfoam_web
+      CORS_ORIGINS: http://localhost:3000,http://127.0.0.1:3000
+    volumes:
+      - jobs_data:/jobs
+    depends_on:
+      mongo:
+        condition: service_healthy
+      openfoam-runner:
+        condition: service_started
+
+  ai:
+    build:
+      context: ./ai
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      GOOGLE_CLOUD_PROJECT_ID: ${GOOGLE_CLOUD_PROJECT_ID:-composite-dream-427518-b8}
+      GOOGLE_APPLICATION_CREDENTIALS: /app/credentials/key.json
+      # Chat model (WebSocket). Image thumbnails: override if a model is unavailable in your region.
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.5-flash}
+      GEMINI_IMAGE_MODEL: ${GEMINI_IMAGE_MODEL:-gemini-2.5-flash-image}
+    volumes:
+      - ./ai/credentials/key.json:/app/credentials/key.json:ro
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # Bump when UI changes but Docker reuses a stale layer (invalidates RUN after COPY).
+        OPENFOAM_UI_BUILD_REV: "3"
+        NEXT_PUBLIC_API_URL: http://localhost:8000
+        NEXT_PUBLIC_TRAME_VIEWER_URL: http://localhost:8090
+        NEXT_PUBLIC_AI_WS_URL: ws://localhost:8081/ws
+        TRAME_INTERNAL_URL: http://trame-viewer:8090
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+      NEXT_PUBLIC_TRAME_VIEWER_URL: http://localhost:8090
+      NEXT_PUBLIC_AI_WS_URL: ws://localhost:8081/ws
+    depends_on:
+      - backend
+      - trame-viewer
+      - ai
+
+  trame-viewer:
+    build:
+      context: ./trame-viewer
+    restart: unless-stopped
+    environment:
+      JOBS_ROOT: /jobs
+      # Large foamToVTK meshes can exceed the default ~10 MiB ws frame limit and kill the socket.
+      TRAME_WS_MAX_MSG_SIZE: "134217728"
+    volumes:
+      - jobs_data:/jobs
+    ports:
+      - "8090:8090"
+    entrypoint:
+      [
+        "python",
+        "/deploy/app.py",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8090",
+        "--timeout",
+        "0",
+      ]
+
+volumes:
+  jobs_data:
+  mongo_data:

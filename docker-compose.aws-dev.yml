@@ -1,0 +1,92 @@
+# AWS dev: images from ECR. Replace __PUBLIC_HOST__ on the server (see deploy/aws/README.md).
+# Built on CI with linux/amd64. Mongo stays upstream; other services use ECR images.
+
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  openfoam-runner:
+    image: ${ECR_REGISTRY}/openfoam-web-dev-openfoam-runner:latest
+    restart: unless-stopped
+    environment:
+      JOBS_ROOT: /jobs
+      OPENFOAM_IMAGE: opencfd/openfoam-run:2512
+      OPENFOAM_BASHRC: /usr/lib/openfoam/openfoam2512/etc/bashrc
+      JOBS_VOLUME_NAME: openfoam_jobs_data
+      JOBS_VOLUME_MOUNT: /work
+    volumes:
+      - jobs_data:/jobs
+      - /var/run/docker.sock:/var/run/docker.sock
+    expose:
+      - "8080"
+
+  backend:
+    image: ${ECR_REGISTRY}/openfoam-web-dev-backend:latest
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      RUNNER_URL: http://openfoam-runner:8080
+      JOBS_ROOT: /jobs
+      MONGODB_URI: mongodb://mongo:27017
+      MONGODB_DB: openfoam_web
+      CORS_ORIGINS: http://__PUBLIC_HOST__:3000,http://localhost:3000
+    volumes:
+      - jobs_data:/jobs
+    depends_on:
+      mongo:
+        condition: service_healthy
+      openfoam-runner:
+        condition: service_started
+
+  ai:
+    image: ${ECR_REGISTRY}/openfoam-web-dev-ai:latest
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      GOOGLE_CLOUD_PROJECT_ID: ${GOOGLE_CLOUD_PROJECT_ID:-composite-dream-427518-b8}
+      GOOGLE_APPLICATION_CREDENTIALS: /app/credentials/key.json
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.5-flash}
+    volumes:
+      - ./ai/credentials/key.json:/app/credentials/key.json:ro
+
+  trame-viewer:
+    image: ${ECR_REGISTRY}/openfoam-web-dev-trame-viewer:latest
+    restart: unless-stopped
+    environment:
+      JOBS_ROOT: /jobs
+      TRAME_WS_MAX_MSG_SIZE: "134217728"
+    volumes:
+      - jobs_data:/jobs
+    ports:
+      - "8090:8090"
+    entrypoint:
+      ["python", "/deploy/app.py", "--host", "0.0.0.0", "--port", "8090", "--timeout", "0"]
+
+  frontend:
+    image: ${ECR_REGISTRY}/openfoam-web-dev-frontend:latest
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://__PUBLIC_HOST__:8000
+      NEXT_PUBLIC_TRAME_VIEWER_URL: http://__PUBLIC_HOST__:8090
+      NEXT_PUBLIC_AI_WS_URL: ws://__PUBLIC_HOST__:8081/ws
+    depends_on:
+      - backend
+      - trame-viewer
+      - ai
+
+volumes:
+  jobs_data:
+  mongo_data:

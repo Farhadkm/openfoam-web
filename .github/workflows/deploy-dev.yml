@@ -1,0 +1,136 @@
+# Dev-only deployment: push images to ECR and restart Docker Compose on the dev EC2 host.
+# Uses the same GitHub Actions AWS credential pattern as SimavAI (AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY).
+# No production job exists in this repository.
+
+name: Deploy dev (AWS)
+
+on:
+  push:
+    branches:
+      - dev
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-push:
+    name: Build and push to ECR
+    runs-on: ubuntu-latest
+    environment: dev
+    env:
+      AWS_REGION: us-east-1
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set registry prefix
+        id: reg
+        run: echo "uri=${{ steps.ecr.outputs.registry }}" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push openfoam-runner
+        working-directory: openfoam-runner
+        run: |
+          REG="${{ steps.reg.outputs.uri }}"
+          IMG="$REG/openfoam-web-dev-openfoam-runner:${GITHUB_SHA::8}"
+          docker build --platform linux/amd64 -t "$IMG" -t "$REG/openfoam-web-dev-openfoam-runner:latest" .
+          docker push "$IMG"
+          docker push "$REG/openfoam-web-dev-openfoam-runner:latest"
+
+      - name: Build and push backend
+        working-directory: backend
+        run: |
+          REG="${{ steps.reg.outputs.uri }}"
+          IMG="$REG/openfoam-web-dev-backend:${GITHUB_SHA::8}"
+          docker build --platform linux/amd64 -t "$IMG" -t "$REG/openfoam-web-dev-backend:latest" .
+          docker push "$IMG"
+          docker push "$REG/openfoam-web-dev-backend:latest"
+
+      - name: Build and push trame-viewer
+        working-directory: trame-viewer
+        run: |
+          REG="${{ steps.reg.outputs.uri }}"
+          IMG="$REG/openfoam-web-dev-trame-viewer:${GITHUB_SHA::8}"
+          docker build --platform linux/amd64 -t "$IMG" -t "$REG/openfoam-web-dev-trame-viewer:latest" .
+          docker push "$IMG"
+          docker push "$REG/openfoam-web-dev-trame-viewer:latest"
+
+      - name: Build and push AI
+        working-directory: ai
+        run: |
+          REG="${{ steps.reg.outputs.uri }}"
+          IMG="$REG/openfoam-web-dev-ai:${GITHUB_SHA::8}"
+          docker build --platform linux/amd64 -t "$IMG" -t "$REG/openfoam-web-dev-ai:latest" .
+          docker push "$IMG"
+          docker push "$REG/openfoam-web-dev-ai:latest"
+
+      - name: Build and push frontend
+        working-directory: frontend
+        env:
+          HOST: ${{ secrets.DEV_PUBLIC_HOST }}
+        run: |
+          if [ -z "$HOST" ]; then
+            echo "::error::DEV_PUBLIC_HOST secret is not set (use terraform output dev_public_dns)."
+            exit 1
+          fi
+          REG="${{ steps.reg.outputs.uri }}"
+          IMG="$REG/openfoam-web-dev-frontend:${GITHUB_SHA::8}"
+          docker build --platform linux/amd64 \
+            --build-arg OPENFOAM_UI_BUILD_REV="${GITHUB_SHA::8}" \
+            --build-arg NEXT_PUBLIC_API_URL="http://${HOST}:8000" \
+            --build-arg NEXT_PUBLIC_TRAME_VIEWER_URL="http://${HOST}:8090" \
+            --build-arg NEXT_PUBLIC_AI_WS_URL="ws://${HOST}:8081/ws" \
+            --build-arg TRAME_INTERNAL_URL="http://trame-viewer:8090" \
+            -t "$IMG" -t "$REG/openfoam-web-dev-frontend:latest" .
+          docker push "$IMG"
+          docker push "$REG/openfoam-web-dev-frontend:latest"
+
+      - name: Redeploy on EC2 (SSM)
+        env:
+          INSTANCE_ID: ${{ secrets.DEV_EC2_INSTANCE_ID }}
+        run: |
+          python3 <<'PY'
+          import json, os, subprocess, sys
+
+          iid = (os.environ.get("INSTANCE_ID") or "").strip()
+          if not iid:
+              print("DEV_EC2_INSTANCE_ID not set — images pushed to ECR only.")
+              sys.exit(0)
+
+          script = r"""set -euxo pipefail
+          cd /opt/openfoam-web
+          set -a
+          [ -f .env ] && . ./.env
+          set +a
+          aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin "$ECR_REGISTRY"
+          docker compose --env-file .env -f docker-compose.aws-dev.yml pull
+          docker compose --env-file .env -f docker-compose.aws-dev.yml up -d --remove-orphans
+          """
+          params = {"commands": [script]}
+          with open("/tmp/ssm-params.json", "w", encoding="utf-8") as f:
+              json.dump(params, f)
+
+          subprocess.check_call(
+              [
+                  "aws",
+                  "ssm",
+                  "send-command",
+                  "--instance-ids",
+                  iid,
+                  "--document-name",
+                  "AWS-RunShellScript",
+                  "--parameters",
+                  "file:///tmp/ssm-params.json",
+                  "--comment",
+                  "openfoam-web dev redeploy",
+              ]
+          )
+          PY
