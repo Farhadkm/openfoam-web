@@ -21,7 +21,8 @@ services:
       JOBS_ROOT: /jobs
       OPENFOAM_IMAGE: opencfd/openfoam-run:2512
       OPENFOAM_BASHRC: /usr/lib/openfoam/openfoam2512/etc/bashrc
-      JOBS_VOLUME_NAME: openfoam_jobs_data
+      # Same host volume as jobs_data:/jobs so OpenFOAM child sees extracted case files.
+      JOBS_VOLUME_NAME: openfoam-web-jobs-data
       JOBS_VOLUME_MOUNT: /work
     volumes:
       - jobs_data:/jobs
@@ -89,4 +90,5 @@ services:
 
 volumes:
   jobs_data:
+    name: openfoam-web-jobs-data
   mongo_data:

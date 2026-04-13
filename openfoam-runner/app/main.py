@@ -19,7 +19,7 @@ app = FastAPI(title="OpenFOAM Runner", version="1.0.0")
 JOBS_ROOT = Path(os.environ.get("JOBS_ROOT", "/jobs")).resolve()
 OPENFOAM_IMAGE = os.environ.get("OPENFOAM_IMAGE", "opencfd/openfoam-run:2512")
 OPENFOAM_BASHRC = os.environ.get("OPENFOAM_BASHRC", "/usr/lib/openfoam/openfoam2512/etc/bashrc")
-JOBS_VOLUME_NAME = os.environ.get("JOBS_VOLUME_NAME", "openfoam_jobs_data")
+JOBS_VOLUME_NAME = os.environ.get("JOBS_VOLUME_NAME", "openfoam-web-jobs-data")
 JOBS_VOLUME_MOUNT = os.environ.get("JOBS_VOLUME_MOUNT", "/work")
 
 def _docker_client() -> docker.DockerClient:

@@ -62,6 +62,10 @@ It configures AWS with `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY`, builds **l
 
 The compose file substitutes `__PUBLIC_HOST__` with the instance public hostname at boot. `DEV_PUBLIC_HOST` in CI must match that host so browser-built URLs align with the backend CORS list.
 
+## Jobs volume (OpenFOAM runs)
+
+The backend and Trame store cases under the Compose volume `jobs_data` (mounted at `/jobs`). The runner must pass **the same Docker volume name** into child OpenFOAM containers (`JOBS_VOLUME_NAME`). If those names differ, the solver container can see an empty `case/` directory and fail with `./Allrun: No such file or directory` even though the ZIP uploaded correctly. This repo pins the host volume name to `openfoam-web-jobs-data` in `docker-compose.aws-dev.yml` so backend, runner, and child containers stay aligned. After changing volume naming, restart compose on the host; you may remove orphaned volumes (for example `openfoam_jobs_data`) with `docker volume ls` / `docker volume rm` if you no longer need them.
+
 ## Costs
 
 Dev uses a single EC2 instance (default `t3.xlarge`) and five ECR repos. Shut down or `terraform destroy` when not needed.

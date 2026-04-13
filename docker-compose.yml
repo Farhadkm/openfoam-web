@@ -22,7 +22,8 @@ services:
       JOBS_ROOT: /jobs
       OPENFOAM_IMAGE: opencfd/openfoam-run:2512
       OPENFOAM_BASHRC: /usr/lib/openfoam/openfoam2512/etc/bashrc
-      JOBS_VOLUME_NAME: openfoam_jobs_data
+      # Must match the Docker volume name used for jobs_data below (child containers use the host API).
+      JOBS_VOLUME_NAME: openfoam-web-jobs-data
       JOBS_VOLUME_MOUNT: /work
     volumes:
       - jobs_data:/jobs
@@ -111,4 +112,5 @@ services:
 
 volumes:
   jobs_data:
+    name: openfoam-web-jobs-data
   mongo_data:

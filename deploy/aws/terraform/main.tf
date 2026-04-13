@@ -222,11 +222,11 @@ locals {
     aws configure set default.region ${var.aws_region}
     aws s3 cp "s3://${aws_s3_bucket.config.id}/docker-compose.aws-dev.yml" /opt/openfoam-web/docker-compose.aws-dev.yml
     sed -i "s|__PUBLIC_HOST__|$PUBLIC_HOST|g" /opt/openfoam-web/docker-compose.aws-dev.yml
-%{if var.gemini_secret_arn != ""}
+    %{if var.gemini_secret_arn != ""}
     aws secretsmanager get-secret-value --secret-id "${var.gemini_secret_arn}" --query SecretString --output text > /opt/openfoam-web/ai/credentials/key.json
-%{else}
+    %{else}
     echo "{}" > /opt/openfoam-web/ai/credentials/key.json
-%{endif}
+    %{endif}
     echo "ECR_REGISTRY=${local.ecr_registry}" > /opt/openfoam-web/.env
     echo "GOOGLE_CLOUD_PROJECT_ID=composite-dream-427518-b8" >> /opt/openfoam-web/.env
     chown -R ec2-user:ec2-user /opt/openfoam-web
@@ -245,9 +245,9 @@ resource "aws_instance" "dev" {
   instance_type               = var.ec2_instance_type
   subnet_id                   = local.subnet_id
   vpc_security_group_ids      = [aws_security_group.app.id]
-  iam_instance_profile          = aws_iam_instance_profile.ec2.name
-  user_data_base64              = base64encode(local.user_data)
-  user_data_replace_on_change   = true
+  iam_instance_profile        = aws_iam_instance_profile.ec2.name
+  user_data_base64            = base64encode(local.user_data)
+  user_data_replace_on_change = true
 
   metadata_options {
     http_endpoint               = "enabled"
