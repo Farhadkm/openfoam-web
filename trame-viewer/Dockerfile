@@ -6,7 +6,12 @@ FROM kitware/trame:conda-2025-09
 USER root
 RUN apt-get update -qq \
  && apt-get install -y --no-install-recommends libosmesa6 \
- && rm -rf /var/lib/apt/lists/*
+ && rm -rf /var/lib/apt/lists/* \
+ && ldconfig \
+ && SYSLIB=$(find /usr/lib -name 'libstdc++.so.6' -print -quit 2>/dev/null) \
+ && if [ -n "$SYSLIB" ] && [ -f "$SYSLIB" ]; then \
+      ln -sf "$SYSLIB" /opt/conda/lib/libstdc++.so.6; \
+    fi
 USER trame-user
 
 WORKDIR /deploy

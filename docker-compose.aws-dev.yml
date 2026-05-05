@@ -67,6 +67,7 @@ services:
     environment:
       JOBS_ROOT: /jobs
       TRAME_WS_MAX_MSG_SIZE: "134217728"
+      WSLINK_HEART_BEAT: "120"
     volumes:
       - jobs_data:/jobs
     ports:
