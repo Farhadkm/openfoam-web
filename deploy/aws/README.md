@@ -24,7 +24,14 @@ Optional:
 |--------|---------|
 | `GEMINI_IMAGE_MODEL` | Override image model tag for AI Dockerfile build (defaults in Dockerfile) |
 
-Gemini JSON on the server: set Terraform variable `gemini_secret_arn` to a Secrets Manager secret containing the service account JSON. The instance role can then fetch it on boot. If unset, a placeholder `{}` is written (AI features will not work until you fix this).
+**Vertex / chatbot credentials:** the AI container expects a real **GCP service account JSON** (field `"type": "service_account"`, plus `project_id`, `private_key`, etc.). Set Terraform variable `gemini_secret_arn` to an AWS **Secrets Manager** secret whose **SecretString** is that whole JSON document. On first boot the instance writes it to `ai/credentials/key.json`. If `gemini_secret_arn` is unset, bootstrap writes **`{}`**, which is **not** valid Google credentials — Vertex then fails with *“Type is None, expected one of …”* and the bot will not work until you add a proper secret and re-bootstrap or replace the file on the host.
+
+Example (create secret once, then set `gemini_secret_arn` in `terraform.tfvars` and `terraform apply`; new instances or SSM re-run of user-data steps pick it up):
+
+```bash
+aws secretsmanager create-secret --name openfoam-web-dev-gemini-sa \
+  --secret-string file:///path/to/your-service-account.json
+```
 
 ## One-time: provision infra
 

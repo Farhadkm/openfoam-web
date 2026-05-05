@@ -30,8 +30,9 @@ JOBS_ROOT = Path(os.environ.get("JOBS_ROOT", "/jobs")).resolve()
 # Default extra delay (seconds) between frames during Play; also the initial `play_interval_sec`
 # (overridable from the job toolbar). Actual sleep is max(VIEWER_PLAY_MIN_INTERVAL, play_interval_sec).
 VIEWER_PLAY_INTERVAL = max(0.0, float(os.environ.get("VIEWER_PLAY_INTERVAL", "0")))
-# Floor for that sleep (default 0 = as fast as VTK + transfer allow). Set e.g. 0.5 to cap update rate.
-VIEWER_PLAY_MIN_INTERVAL = max(0.0, float(os.environ.get("VIEWER_PLAY_MIN_INTERVAL", "0")))
+# Floor for that sleep. Must be >0 so the event loop can drain WebSocket buffers
+# and process incoming messages (like Pause). Too low = buffer overflow → connection death.
+VIEWER_PLAY_MIN_INTERVAL = max(0.25, float(os.environ.get("VIEWER_PLAY_MIN_INTERVAL", "0.25")))
 # When only VTK time changes, keep the camera (faster + less jumpy during Play).
 _camera_reset_key: tuple[str, str, str] | None = None
 # Client-side geometry cache namespace (VtkLocalView contextName): stable across time steps.
@@ -197,6 +198,14 @@ def _read_dataset(path: Path) -> vtkDataObject | None:
     return None
 
 
+def _preload_file_bytes(path: Path) -> bytes | None:
+    """Read raw file bytes in a thread so the event loop stays responsive for WS pings."""
+    try:
+        return path.read_bytes()
+    except OSError:
+        return None
+
+
 def _dataset_cache_clear_if_new_job(job_id: str) -> None:
     global _dataset_cache_job, _dataset_cache
     if not job_id:
@@ -240,6 +249,11 @@ def _sync_geometry_namespace(job_id: str) -> None:
 
 server = get_server("openfoam-trame-viewer")
 state, ctrl = server.state, server.controller
+
+
+def _has_active_client() -> bool:
+    """True when at least one wslink WebSocket session is alive."""
+    return server.protocol is not None
 
 
 @ctrl.add("on_server_bind")
@@ -301,6 +315,12 @@ render_window.SetOffScreenRendering(1)
 # must be created inside the UI/layout context so it can bind to the server/state.
 local_view = None
 _play_task: asyncio.Task | None = None
+
+# Persistent actor/mapper reused across play-mode frames to avoid full scene
+# rebuild on every tick.  Swapping only the mapper's input data means vtk.js
+# receives a much smaller delta, eliminating the white-flash problem.
+_play_mapper: vtkDataSetMapper | None = None
+_play_actor: vtkActor | None = None
 
 
 def _time_index() -> int:
@@ -598,12 +618,20 @@ def openfoam_vtk_load():
 
         actor = vtkActor()
         actor.SetMapper(mapper)
-        actor.GetProperty().SetColor(0.35, 0.75, 0.95)
-        actor.GetProperty().SetOpacity(0.35)
 
         # Optional: show streamlines if U exists and internal mesh is selected.
         streamline_actor = None
+        _has_U_vector = False
         if bool(state.show_streamlines) and state.vtk_file == "internal.vtu":
+            try:
+                for loc in (data.GetPointData(), data.GetCellData()):  # type: ignore[attr-defined]
+                    arr = loc.GetArray("U") if loc else None
+                    if arr and arr.GetNumberOfComponents() == 3 and arr.GetNumberOfTuples() > 0:
+                        _has_U_vector = True
+                        break
+            except Exception:
+                pass
+        if _has_U_vector:
             try:
                 # Seed points across the domain bounds
                 b = data.GetBounds()  # type: ignore[attr-defined]
@@ -681,15 +709,27 @@ def openfoam_vtk_load():
                 mapper.ScalarVisibilityOn()
                 if mode == "cell":
                     mapper.SetScalarModeToUseCellFieldData()
+                    loc = data.GetCellData()  # type: ignore[attr-defined]
                 else:
                     mapper.SetScalarModeToUsePointFieldData()
+                    loc = data.GetPointData()  # type: ignore[attr-defined]
                 mapper.SelectColorArray(name)
-                # Vectors (e.g. U): map by magnitude so timesteps behave consistently.
                 mapper.SetColorModeToMapScalars()
+                arr = loc.GetArray(name) if loc else None
+                if arr:
+                    if arr.GetNumberOfComponents() == 1:
+                        mapper.SetScalarRange(arr.GetRange())
+                    else:
+                        mapper.SetScalarRange(arr.GetRange(-1))
+                actor.GetProperty().SetOpacity(1.0)
             except Exception:
                 mapper.ScalarVisibilityOff()
+                actor.GetProperty().SetColor(0.35, 0.75, 0.95)
+                actor.GetProperty().SetOpacity(0.35)
         else:
             mapper.ScalarVisibilityOff()
+            actor.GetProperty().SetColor(0.35, 0.75, 0.95)
+            actor.GetProperty().SetOpacity(0.35)
 
         # Outline helps empty-looking scalars but vtkOutlineFilter.Update() costs per timestep.
         # Skip it while Play is running so 10→20→30… advances faster; Pause triggers a full reload.
@@ -711,6 +751,34 @@ def openfoam_vtk_load():
         camera_key = (job_id, str(state.vtk_file), str(state.region))
         if _camera_reset_key != camera_key:
             renderer.ResetCamera()
+            # For quasi-2D cases (one axis much thinner than the others),
+            # orient the camera perpendicular to the thin axis so the user
+            # sees a clean 2D view instead of a confusing 3D slab.
+            try:
+                b = data.GetBounds()  # type: ignore[attr-defined]
+                spans = [b[1] - b[0], b[3] - b[2], b[5] - b[4]]
+                min_span = min(spans)
+                max_span = max(spans)
+                if max_span > 0 and min_span / max_span < 0.05:
+                    thin_axis = spans.index(min_span)
+                    cam = renderer.GetActiveCamera()
+                    cx = (b[0] + b[1]) * 0.5
+                    cy = (b[2] + b[3]) * 0.5
+                    cz = (b[4] + b[5]) * 0.5
+                    cam.SetFocalPoint(cx, cy, cz)
+                    if thin_axis == 2:
+                        cam.SetPosition(cx, cy, cz + max_span * 2)
+                        cam.SetViewUp(0, 1, 0)
+                    elif thin_axis == 1:
+                        cam.SetPosition(cx, cy + max_span * 2, cz)
+                        cam.SetViewUp(0, 0, 1)
+                    else:
+                        cam.SetPosition(cx + max_span * 2, cy, cz)
+                        cam.SetViewUp(0, 1, 0)
+                    cam.ParallelProjectionOn()
+                    renderer.ResetCamera()
+            except Exception:
+                pass
             _camera_reset_key = camera_key
 
         # Helpful debug info to confirm the dataset isn't empty.
@@ -734,6 +802,87 @@ def openfoam_vtk_load():
         _publish_bridge_state()
 
 
+def _play_fast_load():
+    """Optimized frame load for play mode: reuse actor/mapper, only swap data.
+
+    Instead of tearing down the entire scene (RemoveAllViewProps → new mapper →
+    new actor → AddActor) every tick, we keep a persistent mapper+actor and just
+    call mapper.SetInputData(new_data).  The scene structure stays identical so
+    local_view.update() pushes a much smaller delta, eliminating white flashes.
+    Falls back to the full openfoam_vtk_load() if anything goes wrong.
+    """
+    global _play_mapper, _play_actor
+
+    try:
+        job_id = _safe_job_id(state.jobId)
+        if not job_id or not state.vtk_time or not state.vtk_file:
+            return
+
+        case_dir = JOBS_ROOT / job_id / "case"
+        of_root = _openfoam_case_root(case_dir)
+        folder = (state.time_to_folder or {}).get(state.vtk_time, state.vtk_time)
+        if state.region:
+            p = of_root / "VTK" / state.region / folder / state.vtk_file
+        else:
+            p = of_root / "VTK" / folder / state.vtk_file
+
+        _dataset_cache_clear_if_new_job(job_id)
+        cache_key = str(p.resolve())
+        data = _dataset_cache_get(cache_key)
+        if data is None:
+            data = _read_dataset(p)
+            if data is not None:
+                _dataset_cache_put(cache_key, data)
+        if data is None:
+            openfoam_vtk_load()
+            return
+
+        if _play_mapper is None or _play_actor is None:
+            openfoam_vtk_load()
+            _play_mapper = None
+            _play_actor = None
+            actors = renderer.GetActors()
+            actors.InitTraversal()
+            for _ in range(actors.GetNumberOfItems()):
+                act = actors.GetNextActor()
+                if act is not None:
+                    m = act.GetMapper()
+                    if isinstance(m, vtkDataSetMapper):
+                        _play_mapper = m
+                        _play_actor = act
+                        break
+            return
+
+        _play_mapper.SetInputData(data)
+
+        if state.scalar and state.scalar != "Solid Color":
+            try:
+                mode, name = state.scalar.split(":", 1)
+                if mode == "cell":
+                    loc = data.GetCellData()
+                else:
+                    loc = data.GetPointData()
+                arr = loc.GetArray(name) if loc else None
+                if arr:
+                    if arr.GetNumberOfComponents() == 1:
+                        _play_mapper.SetScalarRange(arr.GetRange())
+                    else:
+                        _play_mapper.SetScalarRange(arr.GetRange(-1))
+            except Exception:
+                pass
+
+        _play_mapper.Update()
+
+        if local_view is not None:
+            local_view.update()
+        _publish_bridge_state()
+    except Exception:
+        traceback.print_exc()
+        _play_mapper = None
+        _play_actor = None
+        openfoam_vtk_load()
+
+
 # Avoid ctrl names "prev"/"next"/"load"/"refresh" — Trame exposes them on the client where
 # they can shadow JS builtins (iterator .next, window load, location.reload, …).
 @ctrl.add("step_prev")
@@ -754,23 +903,57 @@ def openfoam_toggle_play():
     state.flush()
 
 
+def _restore_outline_on_pause():
+    """Re-add the outline actor after Play stops, without tearing down the scene."""
+    if _play_mapper is None:
+        return
+    try:
+        data = _play_mapper.GetInput()
+        if data is None:
+            return
+        outline = vtkOutlineFilter()
+        outline.SetInputData(data)
+        outline.Update()
+        outline_mapper = vtkDataSetMapper()
+        outline_mapper.SetInputConnection(outline.GetOutputPort())
+        outline_actor = vtkActor()
+        outline_actor.SetMapper(outline_mapper)
+        outline_actor.GetProperty().SetColor(1.0, 1.0, 1.0)
+        outline_actor.GetProperty().SetLineWidth(2.0)
+        renderer.AddActor(outline_actor)
+
+        if local_view is not None:
+            local_view.update()
+        _publish_bridge_state()
+    except Exception:
+        traceback.print_exc()
+
+
 @state.change("vtk_playing")
 def _on_playing_change(vtk_playing, **_):
-    global _play_task
+    global _play_task, _play_mapper, _play_actor
     if _play_task is not None:
         _play_task.cancel()
         _play_task = None
     if not vtk_playing:
-        # Restore outline (and full scene) after pausing; during Play we skip outline for speed.
-        try:
-            openfoam_vtk_load()
-        except Exception:
-            pass
+        # Add outline back (skipped during Play for speed) without tearing down the scene.
+        # A full RemoveAllViewProps → rebuild would flash white because the browser
+        # briefly sees an empty scene.
+        _restore_outline_on_pause()
+        _play_mapper = None
+        _play_actor = None
         return
 
     async def _runner():
+        global _play_mapper, _play_actor
+        consecutive_errors = 0
+        max_consecutive_errors = 5
         try:
             while bool(state.vtk_playing):
+                if not _has_active_client():
+                    print("Play stopped: no active WebSocket client")
+                    break
+
                 try:
                     delta = float(state.play_stride or 0)
                 except (TypeError, ValueError):
@@ -779,7 +962,21 @@ def _on_playing_change(vtk_playing, **_):
                 if delta <= 0:
                     delta = mg
                 _advance_time_play_step(delta)
-                openfoam_vtk_load()
+
+                try:
+                    _play_fast_load()
+                    consecutive_errors = 0
+                except Exception:
+                    consecutive_errors += 1
+                    if consecutive_errors >= max_consecutive_errors:
+                        print(f"Play stopped: {consecutive_errors} consecutive load errors")
+                        break
+
+                # Yield to the event loop so it can:
+                #  1. Drain outgoing WebSocket buffers (VTK scene data)
+                #  2. Process incoming messages (Pause command from bridge)
+                await asyncio.sleep(0.1)
+
                 try:
                     interval = max(
                         VIEWER_PLAY_MIN_INTERVAL,
@@ -793,10 +990,26 @@ def _on_playing_change(vtk_playing, **_):
         except Exception:
             traceback.print_exc()
         finally:
+            _play_mapper = None
+            _play_actor = None
             state.vtk_playing = False
             _publish_bridge_state()
 
     _play_task = asyncio.create_task(_runner())
+
+
+@ctrl.add("on_server_ready")
+def _on_server_ready(**_kwargs):
+    """Re-push the last loaded scene when a new client session connects.
+
+    Without this, a page refresh/reconnect sees a white canvas until the bridge
+    JS re-sends the jobId (a race that occasionally loses).
+    """
+    if state.jobId and state.vtk_time and state.vtk_file:
+        try:
+            openfoam_vtk_load()
+        except Exception:
+            traceback.print_exc()
 
 
 # initial list population (times/files initialized with other state above)

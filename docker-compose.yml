@@ -94,6 +94,10 @@ services:
       JOBS_ROOT: /jobs
       # Large foamToVTK meshes can exceed the default ~10 MiB ws frame limit and kill the socket.
       TRAME_WS_MAX_MSG_SIZE: "134217728"
+      # Raise wslink heartbeat from default 30 s → 120 s.  Synchronous VTK pipeline
+      # builds can block the event loop long enough to miss a 30 s pong deadline,
+      # causing "No PONG received" disconnects and a white viewer canvas.
+      WSLINK_HEART_BEAT: "120"
     volumes:
       - jobs_data:/jobs
     ports:

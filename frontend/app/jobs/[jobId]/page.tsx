@@ -153,6 +153,8 @@ export default function JobVisualizePage() {
 
   const download = useMemo(() => (jobId ? downloadUrl(jobId) : ""), [jobId]);
   const [canvasSrc, setCanvasSrc] = useState("");
+  const iframeEpoch = useRef(0);
+  const watchdogRetries = useRef(0);
 
   const trameWin = () => viewerIframeRef.current?.contentWindow ?? null;
 
@@ -271,6 +273,25 @@ export default function JobVisualizePage() {
   const jobFinishedOk = jobStatus === "completed" && returncode === 0;
   const jobTerminal = jobFinishedOk || jobStatus === "failed" || (jobStatus === "completed" && returncode !== 0 && returncode != null);
   const showViz = Boolean(jobFinishedOk && outputs?.has_vtk);
+
+  // Watchdog: if the trame iframe hasn't sent a state message within
+  // WATCHDOG_MS after the iframe loaded, force-reload it (up to MAX_RETRIES).
+  const WATCHDOG_MS = 12_000;
+  const MAX_RETRIES = 3;
+  useEffect(() => {
+    if (!canvasSrc || !showViz) { watchdogRetries.current = 0; return; }
+    const tid = window.setTimeout(() => {
+      if (trameSnap) return;
+      if (watchdogRetries.current >= MAX_RETRIES) return;
+      watchdogRetries.current += 1;
+      iframeEpoch.current += 1;
+      setCanvasSrc("");
+      requestAnimationFrame(() =>
+        setCanvasSrc(trameCanvasViewerSrc(jobId ?? "", window.location.origin)),
+      );
+    }, WATCHDOG_MS);
+    return () => window.clearTimeout(tid);
+  }, [canvasSrc, showViz, trameSnap, jobId]);
 
   useEffect(() => {
     if (jobTerminal) setProgressOpen(false);

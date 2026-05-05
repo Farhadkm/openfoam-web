@@ -36,6 +36,60 @@ IMAGE_MODEL = os.getenv("GEMINI_IMAGE_MODEL", "gemini-2.5-flash-image")
 
 _vertex_initialized = False
 
+# google-auth Application Default Credentials JSON "type" values (see google.auth._default).
+_GOOGLE_ADC_TYPES = frozenset(
+    {
+        "authorized_user",
+        "service_account",
+        "external_account",
+        "external_account_authorized_user",
+        "impersonated_service_account",
+        "gdch_service_account",
+    }
+)
+
+
+def _credential_file_path() -> str | None:
+    """Path to the JSON file used for Vertex / genai, if it exists."""
+    p = (os.getenv("GOOGLE_APPLICATION_CREDENTIALS") or "").strip()
+    if p and os.path.isfile(p):
+        return p
+    default = "/app/credentials/key.json"
+    if os.path.isfile(default):
+        return default
+    return None
+
+
+def _validate_google_credential_json(path: str) -> None:
+    """Ensure the file is real ADC JSON (not an empty object from AWS bootstrap)."""
+    try:
+        with open(path, encoding="utf-8") as f:
+            raw = f.read()
+        data = json.loads(raw) if raw.strip() else {}
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise RuntimeError(f"Cannot read Google credentials JSON at {path}: {exc}") from exc
+    cred_type = data.get("type")
+    if cred_type not in _GOOGLE_ADC_TYPES:
+        raise RuntimeError(
+            f"Google credentials at {path} are invalid (type is {cred_type!r}; expected one of "
+            f"{sorted(_GOOGLE_ADC_TYPES)}). "
+            "Use a GCP service account JSON with Vertex AI / Gemini access. "
+            "On AWS dev, set Terraform variable gemini_secret_arn to a Secrets Manager secret "
+            "containing that JSON, or replace the host file ai/credentials/key.json — "
+            "the placeholder empty object from bootstrap is not valid."
+        )
+
+
+def _credentials_health() -> dict:
+    path = _credential_file_path()
+    if not path:
+        return {"ok": False, "path": None, "detail": "No credentials file found."}
+    try:
+        _validate_google_credential_json(path)
+    except RuntimeError as exc:
+        return {"ok": False, "path": path, "detail": str(exc)}
+    return {"ok": True, "path": path, "detail": None}
+
 
 def _ensure_vertex():
     global _vertex_initialized
@@ -43,6 +97,15 @@ def _ensure_vertex():
         return
     if not PROJECT_ID:
         raise RuntimeError("GOOGLE_CLOUD_PROJECT_ID is not set")
+    path = _credential_file_path()
+    if not path:
+        raise RuntimeError(
+            "No Google credentials file. Set GOOGLE_APPLICATION_CREDENTIALS or mount "
+            "/app/credentials/key.json with a valid service account JSON."
+        )
+    if not os.getenv("GOOGLE_APPLICATION_CREDENTIALS"):
+        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = path
+    _validate_google_credential_json(path)
     vertexai.init(project=PROJECT_ID, location="us-central1")
     _vertex_initialized = True
 
@@ -95,7 +158,13 @@ app.add_middleware(
 
 @app.get("/health")
 async def health():
-    return {"status": "ok", "model": MODEL_NAME, "image_model": IMAGE_MODEL}
+    cred = _credentials_health()
+    return {
+        "status": "ok" if cred["ok"] else "degraded",
+        "model": MODEL_NAME,
+        "image_model": IMAGE_MODEL,
+        "vertex_credentials": cred,
+    }
 
 
 class ThumbnailRequest(BaseModel):
