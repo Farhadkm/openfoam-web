@@ -8,7 +8,7 @@ docker compose build
 
 ## AWS dev (CI)
 
-GitHub Actions `.github/workflows/deploy-dev.yml` builds **linux/amd64** and pushes to ECR on push to `dev`.
+GitHub Actions `.github/workflows/deploy-dev.yml` builds **linux/amd64** and pushes to ECR on push to `develop`.
 
 Manual equivalent (example):
 

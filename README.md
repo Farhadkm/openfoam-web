@@ -11,7 +11,7 @@ It is split into these main pieces:
 - **AI assistant** (`ai/`): FastAPI service exposing **`GET /health`** and a **WebSocket `/ws`** chat endpoint. It uses **Vertex AI** with a **Gemini** model; the system prompt is built in `prompt.py` from the current page (run vs job), simulation input fields, and viewer state so the model can suggest parameter changes and viewer commands as structured XML the frontend parses.
 - **MongoDB** (`mongo`): persistence for jobs and related metadata (see `docker-compose.yml`).
 
-**AWS dev:** Terraform + a single EC2 host (Docker Compose + ECR) and a **GitHub Actions** workflow on branch `dev` are described in [`deploy/aws/README.md`](deploy/aws/README.md). There is no production deploy in this repo.
+**AWS dev:** Terraform + a single EC2 host (Docker Compose + ECR) and a **GitHub Actions** workflow on branch `develop` are described in [`deploy/aws/README.md`](deploy/aws/README.md). There is no production deploy in this repo.
 
 The OpenFOAM container workflow matches the usual approach described in OpenFOAM docs (source environment, run commands in the case directory): `https://gitlab.com/openfoam/core/openfoam/-/blob/master/doc/Build.md`
 

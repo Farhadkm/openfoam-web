@@ -8,7 +8,7 @@ alwaysApply: false
 ## Current state
 
 - Primary verification: `docker compose up --build` and manual UI/API flows
-- CI: `.github/workflows/deploy-dev.yml` builds and pushes **linux/amd64** images on `dev` branch
+- CI: `.github/workflows/deploy-dev.yml` builds and pushes **linux/amd64** images on `develop` branch
 - No dedicated unit test suite in repo yet — prefer adding tests next to the service they cover when introduced
 
 ## Before merging significant changes

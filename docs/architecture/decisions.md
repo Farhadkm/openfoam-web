@@ -36,6 +36,6 @@
 
 **Context:** Team needs a shared dev host without production scope in this repository.
 
-**Decision:** Terraform + GitHub Actions on branch `dev`; no `main` production workflow.
+**Decision:** Terraform + GitHub Actions on branch `develop`; no `main` production workflow.
 
 **Consequences:** Operational docs treat AWS as dev/staging-like, not HA production.

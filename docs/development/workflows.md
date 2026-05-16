@@ -18,7 +18,7 @@
 1. Edit `deploy/aws/terraform/`
 2. `terraform plan` / `apply`
 3. Update GitHub secrets if outputs change
-4. Push `dev` or re-run deploy workflow
+4. Push `develop` or re-run deploy workflow
 
 ## Documentation
 

@@ -44,9 +44,9 @@ terraform init
 terraform apply
 ```
 
-Copy outputs into GitHub secrets `DEV_PUBLIC_HOST` and `DEV_EC2_INSTANCE_ID`, then push the `dev` branch to trigger image build + deploy.
+Copy outputs into GitHub secrets `DEV_PUBLIC_HOST` and `DEV_EC2_INSTANCE_ID`, then push the `develop` branch to trigger image build + deploy.
 
-**Order matters:** first `terraform apply` creates ECR repos (empty). Then run the **Deploy dev** workflow (or push to `dev`) to build and push images. If the instance already booted before images existed, use **Actions → Re-run** after images exist, or SSM:
+**Order matters:** first `terraform apply` creates ECR repos (empty). Then run the **Deploy dev** workflow (or push to `develop`) to build and push images. If the instance already booted before images existed, use **Actions → Re-run** after images exist, or SSM:
 
 ```bash
 aws ssm start-session --target "$(terraform output -raw dev_instance_id)"
@@ -61,7 +61,7 @@ docker compose --env-file .env -f docker-compose.aws-dev.yml up -d
 ## GitHub Actions
 
 Workflow: `.github/workflows/deploy-dev.yml`  
-Trigger: **push** to branch `dev` only (no `main` / prod deploy).
+Trigger: **push** to branch `develop` only (no `main` / prod deploy).
 
 It configures AWS with `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY`, builds **linux/amd64** images, pushes to the `openfoam-web-dev-*` ECR repos, then runs an SSM command on `DEV_EC2_INSTANCE_ID` to pull and restart compose.
 

@@ -7,7 +7,7 @@ name: Deploy dev (AWS)
 on:
   push:
     branches:
-      - dev
+      - develop
 
 permissions:
   contents: read

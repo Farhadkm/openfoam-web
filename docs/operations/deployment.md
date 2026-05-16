@@ -17,7 +17,7 @@ Full procedure: [deploy/aws/README.md](../../deploy/aws/README.md).
 1. `terraform apply` in `deploy/aws/terraform/`
 2. Configure GitHub secrets: `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `DEV_PUBLIC_HOST`, `DEV_EC2_INSTANCE_ID`
 3. Optional: `gemini_secret_arn` for Vertex credentials on EC2
-4. Push to `dev` branch → images to ECR → SSM redeploy on instance
+4. Push to `develop` branch → images to ECR → SSM redeploy on instance
 
 **Compose file on host:** `docker-compose.aws-dev.yml` with `.env` generated at bootstrap (`ECR_REGISTRY`, public host substitution).
 

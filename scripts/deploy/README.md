@@ -9,7 +9,7 @@ docker compose down
 
 ## AWS dev
 
-Automated: push to branch `dev`.
+Automated: push to branch `develop`.
 
 Manual on EC2 (after SSM login):
 
