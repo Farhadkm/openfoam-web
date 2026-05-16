@@ -1,0 +1,30 @@
+---
+description: 
+alwaysApply: true
+---
+
+# Core workflow
+
+Before writing application code on a **new** project (or a major greenfield area):
+
+1. Create or align standard project structure
+2. Create or update required documentation (`docs/`)
+3. Create or update project-specific Cursor rules (`.cursor/rules/`)
+4. Define scripts layout (`scripts/`) — document commands; avoid one-off duplicates
+5. Maintain architecture entrypoint (`docs/architecture/README.md`)
+6. Define stack and architectural direction
+7. Match existing repo conventions
+
+Prioritize: maintainability, readability, scalability, modularity, consistency, documentation.
+
+## AI agent behavior
+
+- Read relevant `docs/` and `.cursor/rules/` before non-trivial changes
+- Extend existing services; do not introduce parallel systems without reason
+- Update docs when architecture or operations change
+- Do not change architecture silently or add frameworks without justification
+- Never commit secrets; use env vars and documented secret mounts
+
+## Philosophy
+
+Simplicity over complexity; extensibility over hacks; consistency over novelty; operational visibility and developer experience.

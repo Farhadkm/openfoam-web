@@ -1,0 +1,25 @@
+---
+description: 
+alwaysApply: true
+---
+
+# Security
+
+## Secrets
+
+- **Never** commit `ai/credentials/key.json`, `.env` with real keys, or Terraform state with secrets
+- GCP: `GOOGLE_APPLICATION_CREDENTIALS` → mounted JSON; AWS dev: Secrets Manager via `gemini_secret_arn` (see `deploy/aws/README.md`)
+- GitHub Actions: use repository/environment secrets only (`AWS_*`, `DEV_*`, etc.)
+
+## Application
+
+- Validate uploads (ZIP/case) on backend; runner executes user commands in isolated containers — treat commands as untrusted
+- CORS: `CORS_ORIGINS` / `__PUBLIC_HOST__` substitution must match browser-facing host in each environment
+- MongoDB: bound to localhost on host in dev Compose; not a public API surface
+
+## Infrastructure
+
+- IAM: least privilege for ECR push, SSM, S3 config bucket, Secrets Manager read
+- No production deploy in this repo — dev EC2 only; destroy when unused
+
+Document new sensitive systems in `docs/operations/` and `.env.example` (names only, no values).

@@ -1,0 +1,30 @@
+---
+description: Code standards — Python (FastAPI) and TypeScript (Next.js)
+globs: "{frontend/**/*,backend/**/*,openfoam-runner/**/*,trame-viewer/**/*,ai/**/*}"
+alwaysApply: false
+---
+
+# Code standards
+
+## General
+
+- Match surrounding style, naming, and error handling
+- Minimal diffs; no drive-by refactors
+- Env-driven config; no hardcoded hosts in server code (browser URLs use `NEXT_PUBLIC_*` at build time)
+
+## Python (backend, runner, ai, trame-viewer)
+
+- FastAPI routers; typed models where the file already uses them
+- Paths via `JOBS_ROOT` env, not literals scattered across services
+- Log failures with enough context for job id / path debugging
+
+## TypeScript (frontend)
+
+- Functional React components; colocate job/viewer logic with existing pages
+- Viewer and AI bridges: extend `trameBridge.ts` / `aiChat.ts` rather than new ad-hoc message types
+- Parse AI XML only through established tags in `ai/prompt.py` contract
+
+## Docker
+
+- Service changes require `docker-compose.yml` (and `docker-compose.aws-dev.yml` if env/volumes/ports change)
+- Document new env vars in `docs/development/setup.md` and `.env.example`

@@ -1,0 +1,27 @@
+---
+description: Deployment — local Compose and AWS dev (Terraform + GitHub Actions)
+globs: "{deploy/**/*,docker-compose*.yml,.github/workflows/**/*}"
+alwaysApply: false
+---
+
+# Deployment
+
+## Local
+
+- `docker compose up --build` from repo root
+- Reset data: `docker compose down -v`
+- See `Makefile` and `scripts/deploy/README.md`
+
+## AWS dev (only)
+
+- Terraform: `deploy/aws/terraform/` → ECR, S3 compose config, EC2
+- Workflow: push to **`dev`** → build/push images → SSM restart on instance
+- Compose overlay: `docker-compose.aws-dev.yml`
+- **Order:** `terraform apply` → set GitHub secrets (`DEV_PUBLIC_HOST`, `DEV_EC2_INSTANCE_ID`) → push `dev`
+- **Jobs volume:** `JOBS_VOLUME_NAME` / `openfoam-web-jobs-data` must align across backend, runner, and child OpenFOAM containers
+
+## Build-time URLs (frontend)
+
+`NEXT_PUBLIC_TRAME_VIEWER_URL`, `NEXT_PUBLIC_AI_WS_URL`, and API base must match what the **browser** reaches (`DEV_PUBLIC_HOST` in CI).
+
+No production Terraform or `main` deploy in this repository.

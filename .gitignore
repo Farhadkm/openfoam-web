@@ -27,7 +27,8 @@ ai/credentials/*.json
 .DS_Store
 .idea/
 .vscode/
-.cursor/
+.cursor/*
+!.cursor/rules/
 
 # Tooling / cache
 *.tsbuildinfo

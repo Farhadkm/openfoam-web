@@ -1,0 +1,35 @@
+---
+description: OpenFOAM web — repo layout, services, and where code lives
+alwaysApply: true
+---
+
+# Project context (OpenFOAM web)
+
+Multi-service web app: submit OpenFOAM cases, run in Docker, visualize VTK, optional Vertex AI assistant.
+
+## Layout (this repo)
+
+| Path | Role |
+|------|------|
+| `frontend/` | Next.js UI (jobs, viewer controls, AI chat client) |
+| `backend/` | FastAPI public API, MongoDB, job files on `jobs_data` |
+| `openfoam-runner/` | Internal FastAPI; launches OpenFOAM containers via Docker socket |
+| `trame-viewer/` | Trame + VTK; reads `case/VTK/` from shared volume |
+| `ai/` | FastAPI WebSocket chat → Vertex AI Gemini |
+| `deploy/aws/` | Dev-only Terraform + EC2 Compose (not production) |
+| `docker-compose.yml` | Local full stack |
+| `docs/` | Architecture, development, operations (source of truth for agents) |
+
+There is no single `src/` — services are top-level directories. Shared job files live on Docker volume `jobs_data` at `/jobs/<job_id>/`.
+
+## Key integration points
+
+- Backend → runner: `POST /internal/run`
+- UI → Trame: iframe + `postMessage` (`frontend/lib/trameBridge.ts`)
+- UI → AI: WebSocket (`NEXT_PUBLIC_AI_WS_URL`, `frontend/lib/aiChat.ts`)
+- Runner → OpenFOAM: child container must share **`JOBS_VOLUME_NAME`** with backend (see `deploy/aws/README.md`)
+
+## Human entrypoints
+
+- Root `README.md` — run locally, ZIP format, troubleshooting
+- `deploy/aws/README.md` — AWS dev deploy and secrets
