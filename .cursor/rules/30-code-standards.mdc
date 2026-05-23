@@ -1,6 +1,6 @@
 ---
 description: Code standards — Python (FastAPI) and TypeScript (Next.js)
-globs: "{frontend/**/*,backend/**/*,openfoam-runner/**/*,trame-viewer/**/*,ai/**/*}"
+globs: "{frontend/**/*,backend/**/*}"
 alwaysApply: false
 ---
 
@@ -12,7 +12,7 @@ alwaysApply: false
 - Minimal diffs; no drive-by refactors
 - Env-driven config; no hardcoded hosts in server code (browser URLs use `NEXT_PUBLIC_*` at build time)
 
-## Python (backend, runner, ai, trame-viewer)
+## Python (backend, runner, trame-viewer)
 
 - FastAPI routers; typed models where the file already uses them
 - Paths via `JOBS_ROOT` env, not literals scattered across services
@@ -22,7 +22,7 @@ alwaysApply: false
 
 - Functional React components; colocate job/viewer logic with existing pages
 - Viewer and AI bridges: extend `trameBridge.ts` / `aiChat.ts` rather than new ad-hoc message types
-- Parse AI XML only through established tags in `ai/prompt.py` contract
+- Parse AI XML only through established tags in `backend/services/ccs/prompt.py` contract
 
 ## Docker
 

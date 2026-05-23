@@ -19,8 +19,10 @@ import {
   trameOriginAcceptsMessage,
   tramePublicOrigin,
 } from "@/lib/trame";
+import { JobResultFieldsPanel } from "@/app/components/simulation/JobResultFieldsPanel";
 import { ViewerTimeRail } from "@/app/components/ViewerTimeRail";
 import { ViewerPlaySpeedControl } from "@/app/components/ViewerPlaySpeedControl";
+import { ForgeSelect } from "@/app/components/ui/ForgeSelect";
 import {
   formatPlayTimeStepLabel,
   playTimeStepChoiceIndex,
@@ -28,6 +30,7 @@ import {
   vtkTimeMinGap,
 } from "@/lib/vtkPlayTimeStep";
 import { ChatBot } from "@/app/components/ChatBot";
+import { LogToolbar } from "@/app/components/LogToolbar";
 import {
   buildJobPipelineSteps,
   computeJobStepStatuses,
@@ -161,7 +164,7 @@ export default function JobVisualizePage() {
   const sendPatch = useCallback((patch: Record<string, unknown>) => {
     const w = trameWin();
     if (!w) return;
-    postToTrameViewer(w, { type: "openfoam-trame-patch-state", patch }, trameFramePostMessageTarget());
+    postToTrameViewer(w, { type: "forge-trame-patch-state", patch }, trameFramePostMessageTarget());
   }, []);
 
   const changeControl = useCallback(
@@ -199,7 +202,7 @@ export default function JobVisualizePage() {
   const sendCmd = useCallback((cmd: "prev" | "next" | "load" | "toggle_play" | "refresh") => {
     const w = trameWin();
     if (!w) return;
-    postToTrameViewer(w, { type: "openfoam-trame-cmd", cmd }, trameFramePostMessageTarget());
+    postToTrameViewer(w, { type: "forge-trame-cmd", cmd }, trameFramePostMessageTarget());
   }, []);
 
   const viewerStateForAI = useMemo(() => {
@@ -406,7 +409,7 @@ export default function JobVisualizePage() {
       const fromApp = e.origin === window.location.origin;
       const fromTrame = trameOriginAcceptsMessage(tramePub, e.origin);
       if (!fromApp && !fromTrame) return;
-      if (e.data?.type === "openfoam-trame-state" && e.data.payload) {
+      if (e.data?.type === "forge-trame-state" && e.data.payload) {
         setTrameSnap(e.data.payload as TrameViewerSnapshot);
       }
     };
@@ -649,17 +652,18 @@ export default function JobVisualizePage() {
                   <div className="vc-toolbar" role="toolbar" aria-label="VTK viewer controls">
                     <div className="vc-toolbar-group">
                       <label className="vc-label">Time</label>
-                      <select
-                        className="vc-select vc-select--toolbar"
+                      <ForgeSelect
+                        className="forge-select forge-select--toolbar"
                         value={local.time}
-                        onChange={(e) => changeControl("time", e.target.value)}
+                        onChange={(v) => changeControl("time", v)}
                         disabled={!trameSnap.times.length}
-                      >
-                        {trameSnap.times.map((t) => (
-                          <option key={t} value={t}>{t}</option>
-                        ))}
-                        {!trameSnap.times.length && <option value="">(none)</option>}
-                      </select>
+                        options={
+                          trameSnap.times.length
+                            ? trameSnap.times.map((t) => ({ value: t, label: t }))
+                            : [{ value: "", label: "(none)" }]
+                        }
+                        aria-label="Time"
+                      />
                       <span className="vc-time-actions">
                         <button
                           type="button"
@@ -696,24 +700,24 @@ export default function JobVisualizePage() {
                             title={`Play advances by this Δt each tick (multiples of smallest VTK gap ${formatPlayTimeStepLabel(playStepMinGap, playStepMinGap)})`}
                           >
                             <label className="vc-label">Step</label>
-                            <select
-                              className="vc-select vc-select--toolbar vc-select--play-step"
-                              value={playTimeStepChoiceIndex(playStrideChoices, local.play_stride)}
-                              onChange={(e) => {
-                                const i = parseInt(e.target.value, 10);
-                                const v = playStrideChoices[i];
-                                if (v == null || v <= 0) return;
-                                changeControl("play_stride", v, false);
+                            <ForgeSelect
+                              className="forge-select forge-select--toolbar forge-select--play-step"
+                              value={String(
+                                playTimeStepChoiceIndex(playStrideChoices, local.play_stride),
+                              )}
+                              onChange={(v) => {
+                                const i = parseInt(v, 10);
+                                const stride = playStrideChoices[i];
+                                if (stride == null || stride <= 0) return;
+                                changeControl("play_stride", stride, false);
                               }}
                               disabled={!trameSnap.times.length}
+                              options={playStrideChoices.map((c, i) => ({
+                                value: String(i),
+                                label: formatPlayTimeStepLabel(c, playStepMinGap),
+                              }))}
                               aria-label="Play time step in simulation units"
-                            >
-                              {playStrideChoices.map((c, i) => (
-                                <option key={i} value={i}>
-                                  {formatPlayTimeStepLabel(c, playStepMinGap)}
-                                </option>
-                              ))}
-                            </select>
+                            />
                           </span>
                         )}
                       </span>
@@ -723,45 +727,48 @@ export default function JobVisualizePage() {
                       <>
                         <div className="vc-toolbar-group">
                           <label className="vc-label">Region</label>
-                          <select
-                            className="vc-select vc-select--toolbar"
+                          <ForgeSelect
+                            className="forge-select forge-select--toolbar"
                             value={local.region}
-                            onChange={(e) => changeControl("region", e.target.value)}
-                          >
-                            {trameSnap.regions.map((r) => (
-                              <option key={r} value={r}>{r}</option>
-                            ))}
-                          </select>
+                            onChange={(v) => changeControl("region", v)}
+                            options={trameSnap.regions.map((r) => ({
+                              value: r,
+                              label: r,
+                            }))}
+                            aria-label="Region"
+                          />
                         </div>
                         <span className="vc-toolbar-rule" aria-hidden />
                       </>
                     )}
                     <div className="vc-toolbar-group">
                       <label className="vc-label">File</label>
-                      <select
-                        className="vc-select vc-select--toolbar"
+                      <ForgeSelect
+                        className="forge-select forge-select--toolbar"
                         value={local.file}
-                        onChange={(e) => changeControl("file", e.target.value)}
+                        onChange={(v) => changeControl("file", v)}
                         disabled={!trameSnap.files.length}
-                      >
-                        {trameSnap.files.map((f) => (
-                          <option key={f} value={f}>{f}</option>
-                        ))}
-                        {!trameSnap.files.length && <option value="">(none)</option>}
-                      </select>
+                        options={
+                          trameSnap.files.length
+                            ? trameSnap.files.map((f) => ({ value: f, label: f }))
+                            : [{ value: "", label: "(none)" }]
+                        }
+                        aria-label="VTK file"
+                      />
                     </div>
                     <span className="vc-toolbar-rule" aria-hidden />
                     <div className="vc-toolbar-group">
                       <label className="vc-label">Color</label>
-                      <select
-                        className="vc-select vc-select--toolbar"
+                      <ForgeSelect
+                        className="forge-select forge-select--toolbar"
                         value={local.scalar}
-                        onChange={(e) => changeControl("scalar", e.target.value)}
-                      >
-                        {trameSnap.scalars.map((s) => (
-                          <option key={s} value={s}>{s}</option>
-                        ))}
-                      </select>
+                        onChange={(v) => changeControl("scalar", v)}
+                        options={trameSnap.scalars.map((s) => ({
+                          value: s,
+                          label: s,
+                        }))}
+                        aria-label="Scalar color"
+                      />
                     </div>
                     <span className="vc-toolbar-rule" aria-hidden />
                     <div className="vc-toolbar-group">
@@ -795,14 +802,14 @@ export default function JobVisualizePage() {
               <div className="viewer-canvas-wrap">
                 <iframe
                   ref={viewerIframeRef}
-                  name="openfoam-trame-canvas"
-                  title="OpenFOAM VTK visualization"
+                  name="forge-trame-canvas"
+                  title="Forge VTK visualization"
                   src={canvasSrc}
                   className="viewer-canvas-iframe"
                   onLoad={() => {
                     const w = viewerIframeRef.current?.contentWindow;
                     if (!w || !jobId) return;
-                    const payload = { type: "openfoam-trame-set-job" as const, jobId, autoLoad: true as const };
+                    const payload = { type: "forge-trame-set-job" as const, jobId, autoLoad: true as const };
                     for (const ms of [80, 400, 1200, 2800]) {
                       window.setTimeout(() => postToTrameViewer(w, payload, trameFramePostMessageTarget()), ms);
                     }
@@ -835,7 +842,30 @@ export default function JobVisualizePage() {
       {/* ── Download full job workspace (includes case.foam for ParaView) ── */}
       <section className="panel">
         <div className="section-title">Results</div>
-        <p style={{ color: "var(--muted)", margin: "0 0 12px", fontSize: 13, maxWidth: 520 }}>
+        {jobId ? (
+          <div className="results-log-toolbar">
+            <span className="results-log-toolbar-label">Log tools:</span>
+            <LogToolbar
+              logText={log}
+              jobId={jobId}
+              jobMeta={
+                jobMeta
+                  ? {
+                      status: jobStatus ?? jobMeta.status,
+                      returncode,
+                      error_message: jobMeta.error_message,
+                      commands: jobMeta.commands,
+                      simulation_id: jobMeta.simulation_id,
+                    }
+                  : null
+              }
+            />
+          </div>
+        ) : null}
+        {jobId && (
+          <JobResultFieldsPanel jobId={jobId} enabled={jobFinishedOk} />
+        )}
+        <p style={{ color: "var(--muted)", margin: "12px 0 12px", fontSize: 13, maxWidth: 520 }}>
           Download a ZIP of this job&apos;s workspace. A <code>case.foam</code> marker is added automatically so you can open the case in ParaView.
         </p>
         <a className="btn" href={download || "#"} download aria-disabled={!jobId}>
@@ -843,9 +873,35 @@ export default function JobVisualizePage() {
         </a>
       </section>
 
-      {/* ── Commands & full log (collapsed by default) ── */}
+      {/* ── Commands & full log (open when job finished or streaming) ── */}
       <details className="panel job-details-collapse">
-        <summary className="job-details-collapse-summary">Commands &amp; full log</summary>
+        <summary className="job-details-collapse-summary">
+          <span>Commands &amp; full log</span>
+          {jobId ? (
+            <span
+              className="job-details-log-toolbar"
+              role="presentation"
+              onClick={(e) => e.stopPropagation()}
+              onKeyDown={(e) => e.stopPropagation()}
+            >
+              <LogToolbar
+                logText={log}
+                jobId={jobId}
+                jobMeta={
+                  jobMeta
+                    ? {
+                        status: jobStatus ?? jobMeta.status,
+                        returncode,
+                        error_message: jobMeta.error_message,
+                        commands: jobMeta.commands,
+                        simulation_id: jobMeta.simulation_id,
+                      }
+                    : null
+                }
+              />
+            </span>
+          ) : null}
+        </summary>
         <div className="job-details-collapse-body">
           {jobMeta && (
             <>

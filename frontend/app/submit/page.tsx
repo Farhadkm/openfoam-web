@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ThemeConfirmDialog } from "@/app/components/ui/ThemeDialogs";
+import { ForgeSelect } from "@/app/components/ui/ForgeSelect";
 import {
   createJob,
   createRunInstruction,
@@ -78,7 +79,7 @@ export default function SubmitPage() {
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!file) { setError("Choose a ZIP of your OpenFOAM case."); return; }
+    if (!file) { setError("Choose a ZIP of your CFD case."); return; }
     setLoading(true);
     setError(null);
     try {
@@ -94,7 +95,7 @@ export default function SubmitPage() {
   return (
     <>
       <div className="page-desc">
-        Upload an OpenFOAM case as a ZIP file and specify shell commands to run.
+        Upload an CFD case as a ZIP file and specify shell commands to run.
       </div>
 
       <section className="panel">
@@ -137,23 +138,23 @@ export default function SubmitPage() {
 
           <div className="mt-md">
             <label htmlFor="preset">Run Instruction Preset</label>
-            <select
+            <ForgeSelect
               id="preset"
               value={selectedInstructionId ?? ""}
-              onChange={(e) => {
-                const id = e.target.value || null;
-                setSelectedInstructionId(id);
-                if (id) {
-                  const p = runInstructions.find((x) => x.id === id);
+              onChange={(id) => {
+                const next = id || null;
+                setSelectedInstructionId(next);
+                if (next) {
+                  const p = runInstructions.find((x) => x.id === next);
                   if (p) setCommands(p.commands);
                 }
               }}
-            >
-              <option value="">— None —</option>
-              {runInstructions.map((p) => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
-            </select>
+              options={[
+                { value: "", label: "— None —" },
+                ...runInstructions.map((p) => ({ value: p.id, label: p.name })),
+              ]}
+              aria-label="Run instruction preset"
+            />
             <div className="row mt-sm">
               <input
                 type="text"

@@ -5,17 +5,24 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import {
   downloadUrl,
+  fetchPssModels,
   fetchSimulation,
   jobWsUrl,
+  predictWithPssModel,
   runSimulation,
   simulationThumbnailUrl,
+  type JobResultFieldValue,
+  type PssTrainedModel,
   type Simulation,
   type SimulationInputField,
 } from "@/lib/api";
+import { JobResultFieldsPanel } from "@/app/components/simulation/JobResultFieldsPanel";
 import { ChatBot } from "@/app/components/ChatBot";
+import { LogToolbar } from "@/app/components/LogToolbar";
+import { ForgeSelect } from "@/app/components/ui/ForgeSelect";
 import type { SimActionName } from "@/lib/aiChat";
 
-type Phase = "configure" | "running" | "done";
+type Phase = "configure" | "running" | "done" | "predicted";
 
 export default function RunSimulationPage() {
   const params = useParams();
@@ -32,6 +39,12 @@ export default function RunSimulationPage() {
   const [jobId, setJobId] = useState<string | null>(null);
   const [runError, setRunError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [predicting, setPredicting] = useState(false);
+
+  const [pssModels, setPssModels] = useState<PssTrainedModel[]>([]);
+  const [selectedModelId, setSelectedModelId] = useState("");
+  const [predictedFields, setPredictedFields] = useState<JobResultFieldValue[] | null>(null);
+  const [predictError, setPredictError] = useState<string | null>(null);
 
   /* progress state */
   const [log, setLog] = useState("");
@@ -57,6 +70,18 @@ export default function RunSimulationPage() {
         setInputs(defaults);
       })
       .catch((e) => setLoadError(e instanceof Error ? e.message : "Failed to load simulation"));
+  }, [simId]);
+
+  useEffect(() => {
+    if (!simId) return;
+    fetchPssModels(simId)
+      .then((data) => {
+        setPssModels(data.models);
+        if (data.models.length > 0) {
+          setSelectedModelId((prev) => prev || data.models[0].id);
+        }
+      })
+      .catch(() => setPssModels([]));
   }, [simId]);
 
   const setInput = (key: string, value: string) => {
@@ -107,6 +132,34 @@ export default function RunSimulationPage() {
   };
 
   handleRunRef.current = () => { void handleRun(); };
+
+  const handlePredict = async () => {
+    if (!selectedModelId) return;
+    setPredicting(true);
+    setPredictError(null);
+    try {
+      const result = await predictWithPssModel(selectedModelId, inputs);
+      setPredictedFields(result.fields);
+      setPhase("predicted");
+    } catch (e) {
+      setPredictError(e instanceof Error ? e.message : "Prediction failed");
+    } finally {
+      setPredicting(false);
+    }
+  };
+
+  const resetToConfigure = () => {
+    setPhase("configure");
+    setJobId(null);
+    setLog("");
+    setJobStatus(null);
+    setSolverPhase(null);
+    setSolverTime(null);
+    setReturncode(null);
+    setErrorMsg(null);
+    setPredictedFields(null);
+    setPredictError(null);
+  };
 
   /* WebSocket for progress tracking */
   useEffect(() => {
@@ -210,15 +263,13 @@ export default function RunSimulationPage() {
   const renderField = (field: SimulationInputField) => {
     if (field.type === "select" && field.options) {
       return (
-        <select
+        <ForgeSelect
           value={inputs[field.key] ?? field.default}
-          onChange={(e) => setInput(field.key, e.target.value)}
+          onChange={(v) => setInput(field.key, v)}
+          options={field.options.map((opt) => ({ value: opt, label: opt }))}
           disabled={phase !== "configure"}
-        >
-          {field.options.map((opt) => (
-            <option key={opt} value={opt}>{opt}</option>
-          ))}
-        </select>
+          aria-label={field.label}
+        />
       );
     }
     return (
@@ -294,11 +345,97 @@ export default function RunSimulationPage() {
             <p style={{ color: "var(--danger)", fontSize: 13, margin: "12px 0 0" }}>{runError}</p>
           )}
 
+          {pssModels.length > 0 ? (
+            <div
+              className="panel"
+              style={{
+                marginTop: 16,
+                padding: 14,
+                borderColor: "var(--border)",
+                background: "var(--surface-elevated, var(--bg-secondary))",
+              }}
+            >
+              <div className="section-title" style={{ fontSize: 13, margin: "0 0 10px" }}>
+                Predict with ML (skip OpenFOAM)
+              </div>
+              <div className="field" style={{ maxWidth: 360, marginBottom: 12 }}>
+                <label htmlFor="pss-model-select">Trained model</label>
+                <ForgeSelect
+                  id="pss-model-select"
+                  value={selectedModelId}
+                  onChange={setSelectedModelId}
+                  options={pssModels.map((m) => ({
+                    value: m.id,
+                    label: `${m.technique} · ${m.id.slice(0, 8)}… · R² ${m.metrics?.aggregate?.r2 != null ? m.metrics.aggregate.r2.toFixed(2) : "—"}`,
+                  }))}
+                  placeholder="Select model…"
+                />
+              </div>
+              {predictError ? (
+                <p style={{ color: "var(--danger)", fontSize: 13, margin: "0 0 10px" }}>{predictError}</p>
+              ) : null}
+              <button
+                type="button"
+                className="secondary"
+                disabled={predicting || !selectedModelId}
+                onClick={() => void handlePredict()}
+              >
+                {predicting ? "Predicting…" : "Predict results"}
+              </button>
+            </div>
+          ) : null}
+
           <div className="row gap-sm" style={{ marginTop: 20 }}>
             <button type="button" disabled={submitting} onClick={() => void handleRun()}>
               {submitting ? "Starting…" : "Run Simulation"}
             </button>
             <Link href="/" className="btn secondary">Back</Link>
+          </div>
+        </section>
+      )}
+
+      {phase === "predicted" && predictedFields && (
+        <section className="panel" style={{ marginTop: 16 }}>
+          <div className="panel-header">
+            <div className="section-title" style={{ margin: 0 }}>
+              Predicted results
+            </div>
+            <span className="badge ok">ML prediction</span>
+          </div>
+          <div className="result-fields-grid">
+            {predictedFields.map((f) => (
+              <div key={f.key} className="result-field-card panel" style={{ padding: "10px 14px" }}>
+                <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 4 }}>{f.label}</div>
+                <code style={{ fontSize: 13 }}>{f.value || "—"}</code>
+              </div>
+            ))}
+          </div>
+          {jobId && log ? (
+            <div className="run-results-log-toolbar" style={{ marginTop: 16 }}>
+              <span className="run-results-log-toolbar-label">Log tools:</span>
+              <LogToolbar
+                logText={log}
+                jobId={jobId}
+                jobMeta={{
+                  status: jobStatus ?? "",
+                  returncode,
+                  error_message: errorMsg,
+                  commands: sim?.commands,
+                  simulation_id: sim?.id,
+                }}
+                simulation={sim}
+                inputsApplied={inputs}
+                simulationId={simId}
+              />
+            </div>
+          ) : null}
+          <div className="row gap-sm" style={{ marginTop: 16 }}>
+            <button type="button" className="secondary" onClick={resetToConfigure}>
+              Configure again
+            </button>
+            <Link href="/simulation-predictive-model" className="btn secondary">
+              Train more models
+            </Link>
           </div>
         </section>
       )}
@@ -336,15 +473,31 @@ export default function RunSimulationPage() {
           )}
 
           {/* Log output */}
-          <section className="panel" style={{ padding: 0, overflow: "hidden" }}>
-            <div className="panel-header" style={{ padding: "10px 16px" }}>
+          <section className="panel run-log-panel">
+            <div className="panel-header run-log-panel-header">
               <div className="section-title" style={{ margin: 0, fontSize: 13 }}>Simulation Log</div>
-              {phase === "running" && (
-                <span className="run-live-indicator">
-                  <span className="run-live-dot" />
-                  Live
-                </span>
-              )}
+              <div className="run-log-panel-actions">
+                <LogToolbar
+                  logText={log}
+                  jobId={jobId}
+                  jobMeta={{
+                    status: jobStatus ?? "",
+                    returncode,
+                    error_message: errorMsg,
+                    commands: sim?.commands,
+                    simulation_id: sim?.id,
+                  }}
+                  simulation={sim}
+                  inputsApplied={inputs}
+                  simulationId={simId}
+                />
+                {phase === "running" && (
+                  <span className="run-live-indicator">
+                    <span className="run-live-dot" />
+                    Live
+                  </span>
+                )}
+              </div>
             </div>
             <pre ref={logRef} className="run-log">
               {log || (phase === "running" ? "Waiting for output…" : "No log output.")}
@@ -363,8 +516,29 @@ export default function RunSimulationPage() {
           {/* Done: results actions */}
           {phase === "done" && jobId && (
             <div className="run-results">
+              <div className="run-results-log-toolbar">
+                <span className="run-results-log-toolbar-label">Log tools:</span>
+                <LogToolbar
+                  logText={log}
+                  jobId={jobId}
+                  jobMeta={{
+                    status: jobStatus ?? "",
+                    returncode,
+                    error_message: errorMsg,
+                    commands: sim?.commands,
+                    simulation_id: sim?.id,
+                  }}
+                  simulation={sim}
+                  inputsApplied={inputs}
+                  simulationId={simId}
+                />
+              </div>
               <div className="section-title">Results</div>
-              <div className="row gap-sm" style={{ flexWrap: "wrap" }}>
+              <JobResultFieldsPanel
+                jobId={jobId}
+                enabled={jobStatus === "completed" && returncode === 0}
+              />
+              <div className="row gap-sm" style={{ flexWrap: "wrap", marginTop: 12 }}>
                 {jobStatus === "completed" && returncode === 0 && (
                   <Link href={`/jobs/${jobId}`} className="btn">
                     View Visualization
@@ -376,14 +550,7 @@ export default function RunSimulationPage() {
                 <Link href={`/simulations/${sim.id}/run`} className="btn secondary"
                   onClick={(e) => {
                     e.preventDefault();
-                    setPhase("configure");
-                    setJobId(null);
-                    setLog("");
-                    setJobStatus(null);
-                    setSolverPhase(null);
-                    setSolverTime(null);
-                    setReturncode(null);
-                    setErrorMsg(null);
+                    resetToConfigure();
                   }}
                 >
                   Run Again

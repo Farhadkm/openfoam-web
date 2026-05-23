@@ -1,0 +1,39 @@
+# Validate committed OpenAPI exports match current FastAPI apps.
+name: OpenAPI docs
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - "backend/**"
+      - "scripts/openapi/**"
+      - "docs/openapi/**"
+  pull_request:
+    paths:
+      - "backend/**"
+      - "scripts/openapi/**"
+      - "docs/openapi/**"
+
+jobs:
+  openapi:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install backend dependencies
+        run: pip install -r backend/requirements.txt
+
+      - name: Regenerate OpenAPI artifacts
+        run: make openapi
+
+      - name: Verify docs/openapi is up to date
+        run: |
+          git diff --exit-code docs/openapi/ docs/api/scalar/index.html backend/services/bff/static/api-docs/ || (
+            echo "::error::OpenAPI exports are stale. Run 'make openapi' and commit the changes."
+            git diff --stat docs/openapi/ docs/api/scalar/index.html backend/services/bff/static/api-docs/
+            exit 1
+          )

@@ -1,5 +1,9 @@
 # AWS dev: images from ECR. Replace __PUBLIC_HOST__ on the server (see deploy/aws/README.md).
-# Built on CI with linux/amd64. Mongo stays upstream; other services use ECR images.
+# No OTel collector on EC2 — tracing disabled via OTEL_SDK_DISABLED.
+
+x-otel-disabled: &otel-disabled
+  OTEL_SDK_DISABLED: "true"
+  LOG_HTTP_BODY_ENABLED: "false"
 
 services:
   mongo:
@@ -14,15 +18,16 @@ services:
       retries: 5
       start_period: 20s
 
-  openfoam-runner:
-    image: ${ECR_REGISTRY}/openfoam-web-dev-openfoam-runner:latest
+  forge-runner:
+    image: ${ECR_REGISTRY}/forge-web-dev-backend:latest
     restart: unless-stopped
+    command: ["uvicorn", "services.runner.app:app", "--host", "0.0.0.0", "--port", "8080"]
     environment:
+      <<: *otel-disabled
       JOBS_ROOT: /jobs
       OPENFOAM_IMAGE: opencfd/openfoam-run:2512
       OPENFOAM_BASHRC: /usr/lib/openfoam/openfoam2512/etc/bashrc
-      # Same host volume as jobs_data:/jobs so OpenFOAM child sees extracted case files.
-      JOBS_VOLUME_NAME: openfoam-web-jobs-data
+      JOBS_VOLUME_NAME: forge-jobs-data
       JOBS_VOLUME_MOUNT: /work
     volumes:
       - jobs_data:/jobs
@@ -30,39 +35,99 @@ services:
     expose:
       - "8080"
 
-  backend:
-    image: ${ECR_REGISTRY}/openfoam-web-dev-backend:latest
+  simulation:
+    image: ${ECR_REGISTRY}/forge-web-dev-backend:latest
     restart: unless-stopped
-    ports:
-      - "8000:8000"
+    command: ["uvicorn", "services.simulation.app:app", "--host", "0.0.0.0", "--port", "8001"]
+    expose:
+      - "8001"
     environment:
-      RUNNER_URL: http://openfoam-runner:8080
+      <<: *otel-disabled
+      RUNNER_URL: http://forge-runner:8080
       JOBS_ROOT: /jobs
       MONGODB_URI: mongodb://mongo:27017
-      MONGODB_DB: openfoam_web
-      CORS_ORIGINS: http://__PUBLIC_HOST__:3000,http://localhost:3000
+      MONGODB_DB: forge_web
     volumes:
       - jobs_data:/jobs
     depends_on:
       mongo:
         condition: service_healthy
-      openfoam-runner:
+      forge-runner:
         condition: service_started
 
-  ai:
-    image: ${ECR_REGISTRY}/openfoam-web-dev-ai:latest
+  pss:
+    image: ${ECR_REGISTRY}/forge-web-dev-backend:latest
     restart: unless-stopped
+    command: ["uvicorn", "services.pss.app:app", "--host", "0.0.0.0", "--port", "8003"]
+    expose:
+      - "8003"
+    environment:
+      <<: *otel-disabled
+      MONGODB_URI: mongodb://mongo:27017
+      MONGODB_DB: forge_web
+      SIMULATION_SERVICE_URL: http://simulation:8001
+      PSS_MODELS_ROOT: /pss_models
+    volumes:
+      - pss_models:/pss_models
+    depends_on:
+      mongo:
+        condition: service_healthy
+      simulation:
+        condition: service_started
+
+  bff:
+    image: ${ECR_REGISTRY}/forge-web-dev-backend:latest
+    restart: unless-stopped
+    command: ["uvicorn", "services.bff.app:app", "--host", "0.0.0.0", "--port", "8000"]
+    ports:
+      - "8000:8000"
+    environment:
+      <<: *otel-disabled
+      SIMULATION_SERVICE_URL: http://simulation:8001
+      PSS_SERVICE_URL: http://pss:8003
+      CCS_SERVICE_URL: http://ccs:8081
+      TRAME_VIEWER_URL: http://trame-viewer:8090
+      CORS_ORIGINS: http://__PUBLIC_HOST__:3000,http://localhost:3000
+    depends_on:
+      - simulation
+      - pss
+      - ccs
+      - trame-viewer
+
+  ccs:
+    image: ${ECR_REGISTRY}/forge-web-dev-backend:latest
+    restart: unless-stopped
+    command: ["uvicorn", "services.ccs.app:app", "--host", "0.0.0.0", "--port", "8081"]
     ports:
       - "8081:8081"
     environment:
+      <<: *otel-disabled
+      GOOGLE_CLOUD_PROJECT_ID: ${GOOGLE_CLOUD_PROJECT_ID:-composite-dream-427518-b8}
+      GOOGLE_APPLICATION_CREDENTIALS: /app/credentials/key.json
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.5-flash}
+      GEMINI_IMAGE_MODEL: ${GEMINI_IMAGE_MODEL:-gemini-2.5-flash-image}
+      ICS_URL: http://ics:8082
+    volumes:
+      - ./backend/credentials/key.json:/app/credentials/key.json:ro
+    depends_on:
+      - ics
+
+  ics:
+    image: ${ECR_REGISTRY}/forge-web-dev-backend:latest
+    restart: unless-stopped
+    command: ["uvicorn", "services.ics.app:app", "--host", "0.0.0.0", "--port", "8082"]
+    expose:
+      - "8082"
+    environment:
+      <<: *otel-disabled
       GOOGLE_CLOUD_PROJECT_ID: ${GOOGLE_CLOUD_PROJECT_ID:-composite-dream-427518-b8}
       GOOGLE_APPLICATION_CREDENTIALS: /app/credentials/key.json
       GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.5-flash}
     volumes:
-      - ./ai/credentials/key.json:/app/credentials/key.json:ro
+      - ./backend/credentials/key.json:/app/credentials/key.json:ro
 
   trame-viewer:
-    image: ${ECR_REGISTRY}/openfoam-web-dev-trame-viewer:latest
+    image: ${ECR_REGISTRY}/forge-web-dev-trame-viewer:latest
     restart: unless-stopped
     environment:
       JOBS_ROOT: /jobs
@@ -76,20 +141,19 @@ services:
       ["python", "/deploy/app.py", "--host", "0.0.0.0", "--port", "8090", "--timeout", "0"]
 
   frontend:
-    image: ${ECR_REGISTRY}/openfoam-web-dev-frontend:latest
+    image: ${ECR_REGISTRY}/forge-web-dev-frontend:latest
     restart: unless-stopped
     ports:
       - "3000:3000"
     environment:
       NEXT_PUBLIC_API_URL: http://__PUBLIC_HOST__:8000
-      NEXT_PUBLIC_TRAME_VIEWER_URL: http://__PUBLIC_HOST__:8090
-      NEXT_PUBLIC_AI_WS_URL: ws://__PUBLIC_HOST__:8081/ws
     depends_on:
-      - backend
+      - bff
       - trame-viewer
-      - ai
+      - ccs
 
 volumes:
   jobs_data:
-    name: openfoam-web-jobs-data
+    name: forge-jobs-data
+  pss_models:
   mongo_data:

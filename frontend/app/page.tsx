@@ -129,7 +129,7 @@ export default function SimulationsPage() {
     <>
       <div className="page-desc-row">
         <div className="page-desc">
-          Select a simulation to configure and run. Each template includes a pre-configured OpenFOAM
+          Select a simulation to configure and run. Each template includes a pre-configured CFD
           case with adjustable parameters.
         </div>
         <Link href="/simulations/new" className="btn" style={{ whiteSpace: "nowrap", flexShrink: 0 }}>

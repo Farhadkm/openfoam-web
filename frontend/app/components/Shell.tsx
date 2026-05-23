@@ -3,7 +3,21 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const NAV: { label: string; href: string; match?: string; icon: React.ReactNode }[] = [
+type NavChild = {
+  label: string;
+  href: string;
+  match?: string;
+};
+
+type NavItem = {
+  label: string;
+  href: string;
+  match?: string;
+  icon: React.ReactNode;
+  children?: NavChild[];
+};
+
+const NAV: NavItem[] = [
   {
     label: "Simulations",
     href: "/",
@@ -17,14 +31,36 @@ const NAV: { label: string; href: string; match?: string; icon: React.ReactNode 
     ),
   },
   {
-    label: "History",
-    href: "/history",
+    label: "Mass Run",
+    href: "/mass-run",
+    match: "/mass-run",
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="10" />
-        <polyline points="12 6 12 12 16 14" />
+        <path d="M16 3h5v5" />
+        <path d="M8 3H3v5" />
+        <path d="M21 8v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8" />
+        <path d="M8 21H3v-5" />
+        <path d="M16 21h5v-5" />
       </svg>
     ),
+  },
+  {
+    label: "Simulation Predictive Model",
+    href: "/simulation-predictive-model",
+    match: "/simulation-predictive-model",
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M3 3v18h18" />
+        <path d="M7 16l4-8 4 5 5-9" />
+      </svg>
+    ),
+    children: [
+      {
+        label: "History",
+        href: "/history",
+        match: "/history",
+      },
+    ],
   },
   {
     label: "Manual Upload",
@@ -51,6 +87,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
   const jobId = isJobPage ? pathname.split("/")[2] : null;
   const isRunPage = pathname?.match(/^\/simulations\/[^/]+\/run/);
   const runSimId = isRunPage ? pathname?.split("/")[2] : null;
+  const isHistoryPage = pathname === "/history" || pathname?.startsWith("/mass-runs");
 
   return (
     <div className="app-shell">
@@ -80,10 +117,26 @@ export default function Shell({ children }: { children: React.ReactNode }) {
               active = !!pathname?.startsWith(item.match ?? item.href);
             }
             return (
-              <Link key={item.href} href={item.href} className={`sidebar-link${active ? " active" : ""}`}>
-                <span className="sidebar-link-icon">{item.icon}</span>
-                {item.label}
-              </Link>
+              <div key={item.href}>
+                <Link href={item.href} className={`sidebar-link${active ? " active" : ""}`}>
+                  <span className="sidebar-link-icon">{item.icon}</span>
+                  {item.label}
+                </Link>
+                {item.children?.map((child) => {
+                  const childActive =
+                    !!pathname?.startsWith(child.match ?? child.href) ||
+                    (child.href === "/history" && !!pathname?.startsWith("/mass-runs"));
+                  return (
+                    <Link
+                      key={child.href}
+                      href={child.href}
+                      className={`sidebar-link sidebar-link-nested${childActive ? " active" : ""}`}
+                    >
+                      {child.label}
+                    </Link>
+                  );
+                })}
+              </div>
             );
           })}
 
@@ -157,9 +210,13 @@ export default function Shell({ children }: { children: React.ReactNode }) {
               ? "Job"
               : isRunPage
                 ? "Run Simulation"
-                : pathname === "/history"
-                  ? "Run History"
-                  : pathname === "/submit"
+                : isHistoryPage
+                  ? "History"
+                  : pathname === "/mass-run"
+                    ? "Mass Run"
+                    : pathname === "/simulation-predictive-model"
+                      ? "Simulation Predictive Model"
+                      : pathname === "/submit"
                     ? "Manual Upload"
                     : pathname === "/settings"
                       ? "Settings"

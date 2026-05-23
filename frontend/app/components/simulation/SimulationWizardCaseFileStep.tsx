@@ -25,6 +25,8 @@ export type SimulationWizardCaseFileStepProps = {
   showCommandsWithoutAnalysis?: boolean;
   commandsTextareaRows?: number;
   commandsHint?: string;
+  /** When false, hide the run-commands textarea (e.g. result-case upload step). */
+  showCommands?: boolean;
   /** Wizard Back / Next row, rendered inside the panel */
   footer?: ReactNode;
 };
@@ -47,9 +49,11 @@ export function SimulationWizardCaseFileStep({
   showCommandsWithoutAnalysis = false,
   commandsTextareaRows = 2,
   commandsHint,
+  showCommands = true,
   footer,
 }: SimulationWizardCaseFileStepProps) {
-  const showCommandsBlock = Boolean(analysis) || showCommandsWithoutAnalysis;
+  const showCommandsBlock =
+    showCommands && (Boolean(analysis) || showCommandsWithoutAnalysis);
   const defaultHint =
     commandsHint ??
     (analysis ? "Auto-detected from case. Edit if needed." : "Edit run commands for this template.");

@@ -1,4 +1,7 @@
-.PHONY: up down logs ps build reset
+.PHONY: up down logs ps build reset openapi
+
+openapi:
+	./scripts/openapi/export_and_merge.sh
 
 up:
 	docker compose up --build

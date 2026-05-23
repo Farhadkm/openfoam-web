@@ -2,7 +2,7 @@
 
 ## ADR-001: Named Docker volume for job files
 
-**Context:** Bind-mounting host paths into nested OpenFOAM containers fails on Docker Desktop for Mac.
+**Context:** Bind-mounting host paths into nested solver containers fails on Docker Desktop for Mac.
 
 **Decision:** Use Compose volume `jobs_data`; runner passes `JOBS_VOLUME_NAME` into child containers.
 
@@ -12,7 +12,7 @@
 
 **Context:** Backend should not hold Docker privileges.
 
-**Decision:** `openfoam-runner` is internal-only and owns socket access.
+**Decision:** `forge-runner` is internal-only and owns socket access.
 
 **Consequences:** Network must allow backend → runner; runner API is not exposed on host port in default Compose.
 
@@ -20,13 +20,13 @@
 
 **Context:** Full Trame chrome is unnecessary; parent UI owns controls.
 
-**Decision:** VTK-only iframe; `trameBridge.ts` and viewer-served `openfoam-bridge.js` exchange state.
+**Decision:** VTK-only iframe; `trameBridge.ts` and viewer-served `forge-bridge.js` exchange state.
 
 **Consequences:** `NEXT_PUBLIC_TRAME_VIEWER_URL` must be browser-reachable; optional `sessionURL` for wslink.
 
 ## ADR-004: Vertex AI for assistant
 
-**Context:** Need contextual help for OpenFOAM inputs and viewer.
+**Context:** Need contextual help for CFD inputs and viewer.
 
 **Decision:** Dedicated `ai` service with Gemini via Vertex; credentials via mounted JSON or AWS Secrets Manager on dev EC2.
 

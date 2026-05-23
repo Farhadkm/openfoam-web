@@ -1,0 +1,5 @@
+# LLM evaluation (install on host or dev image; not required for production Compose)
+-r requirements.txt
+deepeval>=2.0.0,<3
+pytest>=8.0.0,<9
+pytest-asyncio>=0.24.0,<1

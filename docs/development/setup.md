@@ -9,16 +9,15 @@
 ## Quick start
 
 ```bash
-cd /path/to/OpenFOAM
+cd /path/to/forge
 docker compose up --build
 ```
 
 | URL | Service |
 |-----|---------|
 | http://localhost:3000 | UI |
-| http://localhost:8000/docs | Backend OpenAPI |
-| http://localhost:8090 | Trame (direct) |
-| http://localhost:8081/health | AI health |
+| http://localhost:8000/docs | BFF OpenAPI (jobs, simulations, AI, viewer proxy) |
+| http://localhost:8000/viewer | VTK viewer (proxied to trame-viewer) |
 
 ## Environment variables
 
@@ -27,12 +26,11 @@ Copy `.env.example` to `.env` for local overrides. Compose sets most defaults.
 **AI (required for chat):**
 
 - `GOOGLE_CLOUD_PROJECT_ID`
-- Service account JSON at `ai/credentials/key.json` (mounted in Compose)
+- Service account JSON at `backend/credentials/key.json` (mounted in Compose)
 
 **Frontend (build args in Compose):**
 
-- `NEXT_PUBLIC_TRAME_VIEWER_URL` — e.g. `http://localhost:8090`
-- `NEXT_PUBLIC_AI_WS_URL` — e.g. `ws://localhost:8081/ws`
+- `NEXT_PUBLIC_API_URL` — browser-reachable BFF base (e.g. `http://localhost:8000`). REST, AI WebSocket (`/api/ai/ws`), and Trame iframe (`/viewer`) are derived from this.
 
 ## Case upload
 

@@ -13,8 +13,8 @@ venv/
 .env
 .env.*
 !.env.example
-ai/credentials/*.json
-!ai/credentials/.gitkeep
+backend/credentials/*.json
+!backend/credentials/.gitkeep
 
 # Terraform
 **/.terraform/

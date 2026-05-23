@@ -1,0 +1,233 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Forge Runner",
+    "description": "Internal solver launcher via Docker socket (not exposed on host in default Compose).",
+    "version": "1.0.0",
+    "x-forge-service": "runner",
+    "x-forge-label": "Runner"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Health",
+        "operationId": "runner.health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Health Health Get"
+                }
+              }
+            }
+          }
+        },
+        "x-forge-service": "runner",
+        "x-forge-original-path": "/health"
+      }
+    },
+    "/internal/run": {
+      "post": {
+        "summary": "Run Case",
+        "operationId": "runner.run_case_internal_run_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RunRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-forge-service": "runner",
+        "x-forge-original-path": "/internal/run"
+      }
+    },
+    "/internal/cleanup/{job_id}": {
+      "post": {
+        "summary": "Cleanup",
+        "description": "Optional: remove job workspace on runner (backend may own retention).",
+        "operationId": "runner.cleanup_internal_cleanup__job_id__post",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Response Cleanup Internal Cleanup  Job Id  Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-forge-service": "runner",
+        "x-forge-original-path": "/internal/cleanup/{job_id}"
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "RunRequest": {
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Job Id"
+          },
+          "commands": {
+            "type": "string",
+            "maxLength": 8000,
+            "minLength": 1,
+            "title": "Commands",
+            "default": "blockMesh && simpleFoam"
+          }
+        },
+        "type": "object",
+        "required": [
+          "job_id"
+        ],
+        "title": "RunRequest"
+      },
+      "RunResponse": {
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "title": "Job Id"
+          },
+          "returncode": {
+            "type": "integer",
+            "title": "Returncode"
+          },
+          "log_path": {
+            "type": "string",
+            "title": "Log Path"
+          }
+        },
+        "type": "object",
+        "required": [
+          "job_id",
+          "returncode",
+          "log_path"
+        ],
+        "title": "RunResponse"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "health",
+      "description": "Docker and volume configuration"
+    },
+    {
+      "name": "internal",
+      "description": "Runner API for simulation service only"
+    }
+  ],
+  "servers": [
+    {
+      "url": "http://forge-runner:8080",
+      "description": "Runner"
+    }
+  ]
+}

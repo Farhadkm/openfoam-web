@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Forge APIs — Scalar</title>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
+    <script>
+      Scalar.createApiReference("#app", {
+        theme: "default",
+        sources: [
+          { title: "BFF (Gateway)", slug: "bff", url: "/api-docs/specs/bff.json", default: true },
+          { title: "Simulation", slug: "simulation", url: "/api-docs/specs/simulation.json" },
+          { title: "Runner", slug: "runner", url: "/api-docs/specs/runner.json" },
+          { title: "CCS", slug: "ccs", url: "/api-docs/specs/ccs.json" },
+          { title: "ICS", slug: "ics", url: "/api-docs/specs/ics.json" },
+        ],
+      });
+    </script>
+  </body>
+</html>

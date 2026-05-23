@@ -1,0 +1,466 @@
+[
+  {
+    "id": "run-param-01",
+    "description": "Set end time explicitly",
+    "page_context": "run",
+    "user_message": "Set the end time to 5",
+    "fields_profile": "water_pipe",
+    "expect": {
+      "primary_intent": "parameter_configuration",
+      "required_tags": [
+        "UpdateInputs"
+      ],
+      "forbidden_tags": [
+        "ViewerCmd"
+      ],
+      "update_inputs_contains": {
+        "system/controlDict::endTime": "5"
+      },
+      "plain_text_non_empty": true
+    },
+    "expected_output": "UpdateInputs with system/controlDict::endTime set to 5.",
+    "geval_criteria": "Response must use UpdateInputs to set end time to 5 and confirm in plain text."
+  },
+  {
+    "id": "run-param-02",
+    "description": "Set deltaT",
+    "page_context": "run",
+    "user_message": "Change deltaT to 0.001",
+    "fields_profile": "water_pipe",
+    "expect": {
+      "primary_intent": "parameter_configuration",
+      "required_tags": [
+        "UpdateInputs"
+      ],
+      "update_inputs_contains": {
+        "system/controlDict::deltaT": "0.001"
+      }
+    },
+    "expected_output": "UpdateInputs with deltaT 0.001."
+  },
+  {
+    "id": "run-param-03",
+    "description": "Set time precision",
+    "page_context": "run",
+    "user_message": "Set time precision to 2",
+    "fields_profile": "water_pipe",
+    "expect": {
+      "primary_intent": "parameter_configuration",
+      "required_tags": [
+        "UpdateInputs"
+      ],
+      "update_inputs_contains": {
+        "system/controlDict::timePrecision": "2"
+      }
+    },
+    "expected_output": "UpdateInputs with timePrecision 2."
+  },
+  {
+    "id": "run-param-04",
+    "description": "Set start time",
+    "page_context": "run",
+    "user_message": "Set start time to 0",
+    "fields_profile": "water_pipe",
+    "expect": {
+      "primary_intent": "parameter_configuration",
+      "required_tags": [
+        "UpdateInputs"
+      ],
+      "update_inputs_keys_any": [
+        "system/controlDict::startTime"
+      ]
+    },
+    "expected_output": "UpdateInputs adjusting startTime."
+  },
+  {
+    "id": "run-param-05",
+    "description": "Set write interval",
+    "page_context": "run",
+    "user_message": "Set write interval to 10",
+    "fields_profile": "water_pipe",
+    "expect": {
+      "primary_intent": "parameter_configuration",
+      "required_tags": [
+        "UpdateInputs"
+      ],
+      "update_inputs_keys_any": [
+        "system/controlDict::writeInterval"
+      ]
+    },
+    "expected_output": "UpdateInputs for writeInterval."
+  },
+  {
+    "id": "run-param-06",
+    "description": "Natural language end time",
+    "page_context": "run",
+    "user_message": "Make the simulation run until t=10",
+    "fields_profile": "water_pipe",
+    "expect": {
+      "primary_intent": "parameter_configuration",
+      "required_tags": [
+        "UpdateInputs"
+      ],
+      "update_inputs_keys_any": [
+        "system/controlDict::endTime"
+      ]
+    },
+    "expected_output": "UpdateInputs increasing or setting endTime toward 10."
+  },
+  {
+    "id": "run-param-07",
+    "description": "Multiple fields in one request",
+    "page_context": "run",
+    "user_message": "Set start time to 0 and end time to 20",
+    "fields_profile": "water_pipe",
+    "expect": {
+      "primary_intent": "parameter_configuration",
+      "required_tags": [
+        "UpdateInputs"
+      ],
+      "min_tag_count": 1
+    },
+    "expected_output": "UpdateInputs with both start and end time."
+  },
+  {
+    "id": "run-param-08",
+    "description": "Label-style wording (CSV column name)",
+    "page_context": "run",
+    "user_message": "Set End Time to 3",
+    "fields_profile": "water_pipe",
+    "expect": {
+      "primary_intent": "parameter_configuration",
+      "required_tags": [
+        "UpdateInputs"
+      ],
+      "update_inputs_keys_any": [
+        "system/controlDict::endTime"
+      ]
+    },
+    "expected_output": "UpdateInputs for End Time / endTime."
+  },
+  {
+    "id": "run-param-09",
+    "description": "Use full field key in message",
+    "page_context": "run",
+    "user_message": "Set system/controlDict::endTime to 7",
+    "fields_profile": "water_pipe",
+    "expect": {
+      "primary_intent": "parameter_configuration",
+      "required_tags": [
+        "UpdateInputs"
+      ],
+      "update_inputs_contains": {
+        "system/controlDict::endTime": "7"
+      }
+    },
+    "expected_output": "UpdateInputs with exact controlDict endTime key."
+  },
+  {
+    "id": "run-param-10",
+    "description": "Smaller timestep wording",
+    "page_context": "run",
+    "user_message": "Use a smaller timestep",
+    "fields_profile": "water_pipe",
+    "expect": {
+      "primary_intent": "parameter_configuration",
+      "required_tags": [
+        "UpdateInputs"
+      ],
+      "update_inputs_keys_any": [
+        "system/controlDict::deltaT"
+      ]
+    },
+    "expected_output": "UpdateInputs reducing deltaT."
+  },
+  {
+    "id": "run-param-11",
+    "description": "Out-of-range value should warn or clamp",
+    "page_context": "run",
+    "user_message": "Set end time to 99999",
+    "fields_profile": "water_pipe",
+    "expect": {
+      "primary_intent": "parameter_configuration",
+      "forbidden_tags": [
+        "ViewerCmd"
+      ],
+      "plain_text_non_empty": true
+    },
+    "expected_output": "Warn about max or suggest valid end time; may include UpdateInputs.",
+    "geval_criteria": "Must not silently accept absurd end time without comment; should reference field limits or suggest a valid value."
+  },
+  {
+    "id": "run-param-12",
+    "description": "Vague parameter ask needs clarification",
+    "page_context": "run",
+    "user_message": "Change it",
+    "fields_profile": "water_pipe",
+    "expect": {
+      "forbidden_tags": [
+        "ViewerCmd",
+        "SimAction"
+      ]
+    },
+    "expected_output": "NeedMoreInfo or clarifying plain text, not random UpdateInputs.",
+    "geval_criteria": "Should ask which parameter to change or use NeedMoreInfo, not invent changes."
+  },
+  {
+    "id": "run-param-13",
+    "description": "Ask about defaults (informational)",
+    "page_context": "run",
+    "user_message": "What is the default end time?",
+    "fields_profile": "water_pipe",
+    "expect": {
+      "forbidden_tags": [
+        "ViewerCmd",
+        "SimAction"
+      ],
+      "plain_text_non_empty": true
+    },
+    "expected_output": "Plain text citing default from InputFields context."
+  },
+  {
+    "id": "run-param-14",
+    "description": "Viewer request forbidden on run page",
+    "page_context": "run",
+    "user_message": "Show pressure in the VTK viewer",
+    "fields_profile": "water_pipe",
+    "expect": {
+      "forbidden_tags": [
+        "ViewerCmd"
+      ],
+      "plain_text_non_empty": true
+    },
+    "expected_output": "Explain visualization is on the Job page after the run.",
+    "geval_criteria": "Must not emit ViewerCmd; should redirect user to job visualization page."
+  },
+  {
+    "id": "run-exec-01",
+    "description": "Start simulation",
+    "page_context": "run",
+    "user_message": "Run the simulation",
+    "fields_profile": "water_pipe",
+    "expect": {
+      "primary_intent": "simulation_execution",
+      "required_tags": [
+        "SimAction"
+      ],
+      "sim_actions_contains": [
+        "start_simulation"
+      ],
+      "forbidden_tags": [
+        "ViewerCmd"
+      ]
+    },
+    "expected_output": "SimAction start_simulation."
+  },
+  {
+    "id": "run-exec-02",
+    "description": "Informal run command",
+    "page_context": "run",
+    "user_message": "Go ahead and start it",
+    "fields_profile": "water_pipe",
+    "expect": {
+      "primary_intent": "simulation_execution",
+      "sim_actions_contains": [
+        "start_simulation"
+      ]
+    },
+    "expected_output": "SimAction start_simulation."
+  },
+  {
+    "id": "run-exec-03",
+    "description": "Execute wording",
+    "page_context": "run",
+    "user_message": "Execute the solver now",
+    "fields_profile": "water_pipe",
+    "expect": {
+      "primary_intent": "simulation_execution",
+      "sim_actions_contains": [
+        "start_simulation"
+      ]
+    },
+    "expected_output": "SimAction start_simulation."
+  },
+  {
+    "id": "run-exec-04",
+    "description": "Allrun style",
+    "page_context": "run",
+    "user_message": "Run Allrun",
+    "fields_profile": "water_pipe",
+    "expect": {
+      "primary_intent": "simulation_execution",
+      "sim_actions_contains": [
+        "start_simulation"
+      ]
+    },
+    "expected_output": "SimAction start_simulation."
+  },
+  {
+    "id": "run-exec-05",
+    "description": "Launch wording",
+    "page_context": "run",
+    "user_message": "Launch the job",
+    "fields_profile": "water_pipe",
+    "expect": {
+      "primary_intent": "simulation_execution",
+      "sim_actions_contains": [
+        "start_simulation"
+      ]
+    },
+    "expected_output": "SimAction start_simulation."
+  },
+  {
+    "id": "run-exec-06",
+    "description": "BlockMesh then run",
+    "page_context": "run",
+    "user_message": "Start blockMesh and run simpleFoam",
+    "fields_profile": "water_pipe",
+    "expect": {
+      "primary_intent": "simulation_execution",
+      "sim_actions_contains": [
+        "start_simulation"
+      ]
+    },
+    "expected_output": "SimAction start_simulation (template commands already configured)."
+  },
+  {
+    "id": "run-exec-07",
+    "description": "Run after parameter mention",
+    "page_context": "run",
+    "user_message": "Set end time to 2 and then run",
+    "fields_profile": "water_pipe",
+    "expect": {
+      "primary_intent": "parameter_configuration",
+      "min_tag_count": 1
+    },
+    "expected_output": "UpdateInputs and/or start_simulation; at least one action tag."
+  },
+  {
+    "id": "run-exec-08",
+    "description": "Simulate wording",
+    "page_context": "run",
+    "user_message": "Please simulate",
+    "fields_profile": "water_pipe",
+    "expect": {
+      "primary_intent": "simulation_execution",
+      "sim_actions_contains": [
+        "start_simulation"
+      ]
+    },
+    "expected_output": "SimAction start_simulation."
+  },
+  {
+    "id": "run-reset-01",
+    "description": "Reset inputs",
+    "page_context": "run",
+    "user_message": "Reset inputs to defaults",
+    "fields_profile": "water_pipe",
+    "expect": {
+      "sim_actions_contains": [
+        "reset_inputs"
+      ],
+      "forbidden_tags": [
+        "ViewerCmd"
+      ]
+    },
+    "expected_output": "SimAction reset_inputs."
+  },
+  {
+    "id": "run-reset-02",
+    "description": "Reset wording variant",
+    "page_context": "run",
+    "user_message": "Restore default parameters",
+    "fields_profile": "water_pipe",
+    "expect": {
+      "sim_actions_contains": [
+        "reset_inputs"
+      ]
+    },
+    "expected_output": "SimAction reset_inputs."
+  },
+  {
+    "id": "run-casual-01",
+    "description": "Greeting",
+    "page_context": "run",
+    "user_message": "Hello",
+    "fields_profile": "water_pipe",
+    "expect": {
+      "forbidden_tags": [
+        "ViewerCmd",
+        "UpdateInputs",
+        "SimAction"
+      ],
+      "plain_text_non_empty": true
+    },
+    "expected_output": "CasualMessage or friendly plain text."
+  },
+  {
+    "id": "run-casual-02",
+    "description": "Capabilities question",
+    "page_context": "run",
+    "user_message": "What can you help me with on this page?",
+    "fields_profile": "water_pipe",
+    "expect": {
+      "plain_text_non_empty": true,
+      "forbidden_tags": [
+        "ViewerCmd"
+      ]
+    },
+    "expected_output": "Describe parameter edits and running simulation."
+  },
+  {
+    "id": "run-casual-03",
+    "description": "Thanks",
+    "page_context": "run",
+    "user_message": "Thanks!",
+    "fields_profile": "water_pipe",
+    "expect": {
+      "forbidden_tags": [
+        "UpdateInputs",
+        "SimAction",
+        "ViewerCmd"
+      ]
+    },
+    "expected_output": "Brief acknowledgment."
+  },
+  {
+    "id": "run-casual-04",
+    "description": "Off-topic",
+    "page_context": "run",
+    "user_message": "What's the weather in Paris?",
+    "fields_profile": "water_pipe",
+    "expect": {
+      "forbidden_tags": [
+        "UpdateInputs",
+        "SimAction",
+        "ViewerCmd"
+      ]
+    },
+    "expected_output": "CasualMessage redirecting to simulation tasks."
+  },
+  {
+    "id": "run-casual-05",
+    "description": "Minimal help request",
+    "page_context": "run",
+    "user_message": "help",
+    "fields_profile": "water_pipe",
+    "expect": {
+      "plain_text_non_empty": true
+    },
+    "expected_output": "Short help about inputs and run."
+  },
+  {
+    "id": "route-01",
+    "description": "Analysis wording on run page",
+    "page_context": "run",
+    "user_message": "Plot the pressure field from the results",
+    "fields_profile": "water_pipe",
+    "expect": {
+      "forbidden_tags": [
+        "ViewerCmd"
+      ],
+      "plain_text_non_empty": true
+    },
+    "expected_output": "Explain results are on the Job page after the simulation finishes."
+  }
+]

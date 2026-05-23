@@ -19,6 +19,7 @@ export type ChatMessage = {
   role: "user" | "assistant" | "system";
   text: string;
   tags?: ParsedTag[];
+  agentLabel?: string;
 };
 
 type Props = {
@@ -44,6 +45,8 @@ export function ChatBot({
   const [status, setStatus] = useState("Disconnected");
   const [ready, setReady] = useState(false);
   const [sending, setSending] = useState(false);
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [copyLabel, setCopyLabel] = useState("Copy");
 
   const socketRef = useRef<WebSocket | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -60,17 +63,52 @@ export function ChatBot({
     setMessages((prev) => [...prev, msg]);
   }, []);
 
+  const conversationStorageKey = `forge_conversation_${pageContext}`;
+
+  const persistConversationId = useCallback(
+    (id: string) => {
+      setConversationId(id);
+      try {
+        sessionStorage.setItem(conversationStorageKey, id);
+      } catch {
+        /* ignore quota / private mode */
+      }
+    },
+    [conversationStorageKey],
+  );
+
+  const handleCopyConversationId = useCallback(async () => {
+    if (!conversationId) return;
+    try {
+      await navigator.clipboard.writeText(conversationId);
+      setCopyLabel("Copied");
+      setTimeout(() => setCopyLabel("Copy"), 2000);
+    } catch {
+      setCopyLabel("Failed");
+      setTimeout(() => setCopyLabel("Copy"), 2000);
+    }
+  }, [conversationId]);
+
   useEffect(() => {
     if (!open) return;
+
+    let storedId: string | undefined;
+    try {
+      const raw = sessionStorage.getItem(conversationStorageKey);
+      if (raw) storedId = raw;
+    } catch {
+      /* ignore */
+    }
 
     const init: AIChatInitPayload = {
       pageContext,
       inputFields: inputFields ?? undefined,
       viewerState: (viewerState as Record<string, unknown>) ?? undefined,
+      conversationId: storedId,
     };
 
     const ws = connectAIChat(init, {
-      onAssistantMessage(raw) {
+      onAssistantMessage(raw, meta) {
         const { tags, plainText } = parseAssistantXml(raw);
 
         for (const t of tags) {
@@ -94,10 +132,16 @@ export function ChatBot({
             .join("\n") ||
           "(action applied)";
 
-        pushMsg({ role: "assistant", text: display, tags });
+        pushMsg({
+          role: "assistant",
+          text: display,
+          tags,
+          agentLabel: meta?.agentLabel,
+        });
         setSending(false);
       },
-      onReady() {
+      onReady(id) {
+        persistConversationId(id);
         setReady(true);
         setStatus("Ready");
       },
@@ -110,6 +154,7 @@ export function ChatBot({
       onDisconnect() {
         setReady(false);
         setStatus("Disconnected");
+        setConversationId(null);
       },
     });
 
@@ -134,14 +179,32 @@ export function ChatBot({
     if (open && ready) inputRef.current?.focus();
   }, [open, ready]);
 
+  useEffect(() => {
+    if (!sending && open && ready) {
+      inputRef.current?.focus();
+    }
+  }, [sending, open, ready]);
+
+  const focusInput = useCallback(() => {
+    requestAnimationFrame(() => inputRef.current?.focus());
+  }, []);
+
   const handleSend = (e?: FormEvent) => {
     e?.preventDefault();
     const text = draft.trim();
-    if (!text || !socketRef.current || socketRef.current.readyState !== WebSocket.OPEN) return;
+    if (
+      sending ||
+      !text ||
+      !socketRef.current ||
+      socketRef.current.readyState !== WebSocket.OPEN
+    ) {
+      return;
+    }
     pushMsg({ role: "user", text });
     socketRef.current.send(JSON.stringify({ type: "user_message", message: text }));
     setDraft("");
     setSending(true);
+    focusInput();
   };
 
   return (
@@ -169,7 +232,35 @@ export function ChatBot({
       {open && (
         <div className="chat-panel">
           <div className="chat-header">
-            <span className="chat-header-title">AI Assistant</span>
+            <div className="chat-header-main">
+              <span className="chat-header-title">AI Assistant</span>
+              {conversationId ? (
+                <div className="chat-conversation-id" title={conversationId}>
+                  <span className="chat-conversation-id-label">Conversation</span>
+                  <code className="chat-conversation-id-value">{conversationId}</code>
+                  <button
+                    type="button"
+                    className="chat-conversation-id-copy"
+                    onClick={() => void handleCopyConversationId()}
+                    aria-label="Copy conversation ID"
+                    title="Copy conversation ID"
+                  >
+                    {copyLabel === "Copied" ? (
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                    ) : (
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                        <rect x="9" y="9" width="13" height="13" rx="2" />
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
+              ) : (
+                <span className="chat-conversation-id-pending">Assigning conversation…</span>
+              )}
+            </div>
             <span className="chat-header-status">{status}</span>
           </div>
 
@@ -184,6 +275,9 @@ export function ChatBot({
             {messages.map((m, i) => (
               <div key={i} className={`chat-msg chat-msg--${m.role}`}>
                 <div className="chat-msg-bubble">
+                  {m.role === "assistant" && m.agentLabel && (
+                    <span className="chat-msg-agent">{m.agentLabel}</span>
+                  )}
                   {m.text}
                   {m.tags && m.tags.some((t) => t.tag === "UpdateInputs") && (
                     <span className="chat-msg-action">Inputs updated</span>
@@ -214,7 +308,7 @@ export function ChatBot({
               placeholder={ready ? "Type a message…" : "Connecting…"}
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
-              disabled={!ready || sending}
+              disabled={!ready}
             />
             <button
               type="submit"

@@ -1,33 +1,45 @@
 ---
-description: OpenFOAM web — repo layout, services, and where code lives
+description: Forge — repo layout, services, and where code lives
 alwaysApply: true
 ---
 
-# Project context (OpenFOAM web)
+# Project context (Forge)
 
-Multi-service web app: submit OpenFOAM cases, run in Docker, visualize VTK, optional Vertex AI assistant.
+Multi-service web app: submit CFD cases, run in Docker, visualize VTK, optional Vertex AI assistant.
 
 ## Layout (this repo)
 
 | Path | Role |
 |------|------|
 | `frontend/` | Next.js UI (jobs, viewer controls, AI chat client) |
-| `backend/` | FastAPI public API, MongoDB, job files on `jobs_data` |
-| `openfoam-runner/` | Internal FastAPI; launches OpenFOAM containers via Docker socket |
-| `trame-viewer/` | Trame + VTK; reads `case/VTK/` from shared volume |
-| `ai/` | FastAPI WebSocket chat → Vertex AI Gemini |
+| `backend/` | Python microservices (shared image, different CMD in Compose) |
+| `backend/services/bff/` | Backend-for-Frontend — browser REST/WS on port **8000** |
+| `backend/services/simulation/` | Jobs + simulations API, MongoDB, case files on `jobs_data` (internal **8001**) |
+| `backend/services/ccs/` | Chat Conversation Service (WebSocket, port **8081**) |
+| `backend/services/ics/` | Intent Classification Service (internal, port **8082**) |
+| `backend/services/runner/` | Internal runner — launches solver containers via Docker socket (**8080**) |
+| `backend/services/trame-viewer/` | Trame + VTK viewer (separate image); reads `case/VTK/` from shared volume (**8090**) |
+| `backend/services/pss/` | Predictive Simulation Service — XGBoost on mass runs (**8003**) |
 | `deploy/aws/` | Dev-only Terraform + EC2 Compose (not production) |
 | `docker-compose.yml` | Local full stack |
 | `docs/` | Architecture, development, operations (source of truth for agents) |
 
-There is no single `src/` — services are top-level directories. Shared job files live on Docker volume `jobs_data` at `/jobs/<job_id>/`.
+Vertex credentials: `backend/credentials/key.json` (not committed).
+
+Shared job files live on Docker volume `jobs_data` at `/jobs/<job_id>/`.
 
 ## Key integration points
 
-- Backend → runner: `POST /internal/run`
-- UI → Trame: iframe + `postMessage` (`frontend/lib/trameBridge.ts`)
-- UI → AI: WebSocket (`NEXT_PUBLIC_AI_WS_URL`, `frontend/lib/aiChat.ts`)
-- Runner → OpenFOAM: child container must share **`JOBS_VOLUME_NAME`** with backend (see `deploy/aws/README.md`)
+- UI → BFF: `NEXT_PUBLIC_API_URL` (port 8000) — REST, AI WebSocket (`/api/ai/ws`), Trame iframe (`/viewer`)
+- BFF → simulation: `SIMULATION_SERVICE_URL` (internal HTTP + WebSocket proxy)
+- BFF → trame-viewer: `TRAME_VIEWER_URL` (`/viewer` HTTP + `/viewer/ws`)
+- Jobs → runner: `POST /internal/run`
+- UI → Trame: iframe via BFF `/viewer` + `postMessage` (`frontend/lib/trameBridge.ts`)
+- UI → CCS: WebSocket via BFF `/api/ai/ws` (`frontend/lib/aiChat.ts`)
+- CCS → ICS: `ICS_URL` for intent classification on each user message
+- BFF → PSS: `PSS_SERVICE_URL` — `/api/predictive-models`, `/api/simulations/{id}/predictive-models`
+- PSS → simulation: `SIMULATION_SERVICE_URL` for mass-run CSV and simulation config
+- Runner → solver: child container must share **`JOBS_VOLUME_NAME`** with simulation service (see `deploy/aws/README.md`)
 
 ## Human entrypoints
 

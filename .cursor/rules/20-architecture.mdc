@@ -9,7 +9,7 @@ Before major changes:
 
 1. Read `docs/architecture/README.md` and linked docs
 2. Identify affected services: frontend, backend, runner, trame-viewer, ai
-3. Follow existing patterns (REST, internal runner HTTP, postMessage bridge, AI XML contract in `ai/prompt.py`)
+3. Follow existing patterns (REST via BFF, internal runner HTTP, postMessage bridge, AI XML contract in `backend/services/ccs/prompt.py`)
 4. Reuse components; avoid duplicate job/volume paths or second viewers
 5. Explain architectural impact in PRs or chat when non-obvious
 6. Update `docs/architecture/` and service READMEs if behavior or boundaries change
@@ -18,6 +18,6 @@ Prefer: modular services, clear boundaries, low coupling, shared `jobs_data` vol
 
 ## Data flow (summary)
 
-Upload ZIP → backend extracts to `/jobs/<id>/case/` → runner runs OpenFOAM in container → logs/VTK on volume → Trame reads VTK → UI embeds viewer and optional AI context.
+Upload ZIP → simulation service extracts to `/jobs/<id>/case/` → runner runs solver in container → logs/VTK on volume → Trame reads VTK → UI embeds viewer and optional AI context.
 
-Do not bypass MongoDB for job metadata or mount ad-hoc host paths into OpenFOAM containers (macOS bind-mount issues); use the named volume pattern in Compose.
+Do not bypass MongoDB for job metadata or mount ad-hoc host paths into solver containers (macOS bind-mount issues); use the named volume pattern in Compose.

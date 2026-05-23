@@ -1,0 +1,755 @@
+[
+  {
+    "id": "run-param-01",
+    "description": "Set end time explicitly",
+    "page_context": "run",
+    "user_message": "Set the end time to 5",
+    "fields_profile": "water_pipe",
+    "expect": {
+      "primary_intent": "parameter_configuration",
+      "required_tags": [
+        "UpdateInputs"
+      ],
+      "forbidden_tags": [
+        "ViewerCmd"
+      ],
+      "update_inputs_contains": {
+        "system/controlDict::endTime": "5"
+      },
+      "plain_text_non_empty": true
+    },
+    "expected_output": "UpdateInputs with system/controlDict::endTime set to 5.",
+    "geval_criteria": "Response must use UpdateInputs to set end time to 5 and confirm in plain text."
+  },
+  {
+    "id": "run-param-02",
+    "description": "Set deltaT",
+    "page_context": "run",
+    "user_message": "Change deltaT to 0.001",
+    "fields_profile": "water_pipe",
+    "expect": {
+      "primary_intent": "parameter_configuration",
+      "required_tags": [
+        "UpdateInputs"
+      ],
+      "update_inputs_contains": {
+        "system/controlDict::deltaT": "0.001"
+      }
+    },
+    "expected_output": "UpdateInputs with deltaT 0.001."
+  },
+  {
+    "id": "run-param-03",
+    "description": "Set time precision",
+    "page_context": "run",
+    "user_message": "Set time precision to 2",
+    "fields_profile": "water_pipe",
+    "expect": {
+      "primary_intent": "parameter_configuration",
+      "required_tags": [
+        "UpdateInputs"
+      ],
+      "update_inputs_contains": {
+        "system/controlDict::timePrecision": "2"
+      }
+    },
+    "expected_output": "UpdateInputs with timePrecision 2."
+  },
+  {
+    "id": "run-param-04",
+    "description": "Set start time",
+    "page_context": "run",
+    "user_message": "Set start time to 0",
+    "fields_profile": "water_pipe",
+    "expect": {
+      "primary_intent": "parameter_configuration",
+      "required_tags": [
+        "UpdateInputs"
+      ],
+      "update_inputs_keys_any": [
+        "system/controlDict::startTime"
+      ]
+    },
+    "expected_output": "UpdateInputs adjusting startTime."
+  },
+  {
+    "id": "run-param-05",
+    "description": "Set write interval",
+    "page_context": "run",
+    "user_message": "Set write interval to 10",
+    "fields_profile": "water_pipe",
+    "expect": {
+      "primary_intent": "parameter_configuration",
+      "required_tags": [
+        "UpdateInputs"
+      ],
+      "update_inputs_keys_any": [
+        "system/controlDict::writeInterval"
+      ]
+    },
+    "expected_output": "UpdateInputs for writeInterval."
+  },
+  {
+    "id": "run-param-06",
+    "description": "Natural language end time",
+    "page_context": "run",
+    "user_message": "Make the simulation run until t=10",
+    "fields_profile": "water_pipe",
+    "expect": {
+      "primary_intent": "parameter_configuration",
+      "required_tags": [
+        "UpdateInputs"
+      ],
+      "update_inputs_keys_any": [
+        "system/controlDict::endTime"
+      ]
+    },
+    "expected_output": "UpdateInputs increasing or setting endTime toward 10."
+  },
+  {
+    "id": "run-param-07",
+    "description": "Multiple fields in one request",
+    "page_context": "run",
+    "user_message": "Set start time to 0 and end time to 20",
+    "fields_profile": "water_pipe",
+    "expect": {
+      "primary_intent": "parameter_configuration",
+      "required_tags": [
+        "UpdateInputs"
+      ],
+      "min_tag_count": 1
+    },
+    "expected_output": "UpdateInputs with both start and end time."
+  },
+  {
+    "id": "run-param-08",
+    "description": "Label-style wording (CSV column name)",
+    "page_context": "run",
+    "user_message": "Set End Time to 3",
+    "fields_profile": "water_pipe",
+    "expect": {
+      "primary_intent": "parameter_configuration",
+      "required_tags": [
+        "UpdateInputs"
+      ],
+      "update_inputs_keys_any": [
+        "system/controlDict::endTime"
+      ]
+    },
+    "expected_output": "UpdateInputs for End Time / endTime."
+  },
+  {
+    "id": "run-param-09",
+    "description": "Use full field key in message",
+    "page_context": "run",
+    "user_message": "Set system/controlDict::endTime to 7",
+    "fields_profile": "water_pipe",
+    "expect": {
+      "primary_intent": "parameter_configuration",
+      "required_tags": [
+        "UpdateInputs"
+      ],
+      "update_inputs_contains": {
+        "system/controlDict::endTime": "7"
+      }
+    },
+    "expected_output": "UpdateInputs with exact controlDict endTime key."
+  },
+  {
+    "id": "run-param-10",
+    "description": "Smaller timestep wording",
+    "page_context": "run",
+    "user_message": "Use a smaller timestep",
+    "fields_profile": "water_pipe",
+    "expect": {
+      "primary_intent": "parameter_configuration",
+      "required_tags": [
+        "UpdateInputs"
+      ],
+      "update_inputs_keys_any": [
+        "system/controlDict::deltaT"
+      ]
+    },
+    "expected_output": "UpdateInputs reducing deltaT."
+  },
+  {
+    "id": "run-param-11",
+    "description": "Out-of-range value should warn or clamp",
+    "page_context": "run",
+    "user_message": "Set end time to 99999",
+    "fields_profile": "water_pipe",
+    "expect": {
+      "primary_intent": "parameter_configuration",
+      "forbidden_tags": [
+        "ViewerCmd"
+      ],
+      "plain_text_non_empty": true
+    },
+    "expected_output": "Warn about max or suggest valid end time; may include UpdateInputs.",
+    "geval_criteria": "Must not silently accept absurd end time without comment; should reference field limits or suggest a valid value."
+  },
+  {
+    "id": "run-param-12",
+    "description": "Vague parameter ask needs clarification",
+    "page_context": "run",
+    "user_message": "Change it",
+    "fields_profile": "water_pipe",
+    "expect": {
+      "forbidden_tags": [
+        "ViewerCmd",
+        "SimAction"
+      ]
+    },
+    "expected_output": "NeedMoreInfo or clarifying plain text, not random UpdateInputs.",
+    "geval_criteria": "Should ask which parameter to change or use NeedMoreInfo, not invent changes."
+  },
+  {
+    "id": "run-param-13",
+    "description": "Ask about defaults (informational)",
+    "page_context": "run",
+    "user_message": "What is the default end time?",
+    "fields_profile": "water_pipe",
+    "expect": {
+      "forbidden_tags": [
+        "ViewerCmd",
+        "SimAction"
+      ],
+      "plain_text_non_empty": true
+    },
+    "expected_output": "Plain text citing default from InputFields context."
+  },
+  {
+    "id": "run-param-14",
+    "description": "Viewer request forbidden on run page",
+    "page_context": "run",
+    "user_message": "Show pressure in the VTK viewer",
+    "fields_profile": "water_pipe",
+    "expect": {
+      "forbidden_tags": [
+        "ViewerCmd"
+      ],
+      "plain_text_non_empty": true
+    },
+    "expected_output": "Explain visualization is on the Job page after the run.",
+    "geval_criteria": "Must not emit ViewerCmd; should redirect user to job visualization page."
+  },
+  {
+    "id": "run-exec-01",
+    "description": "Start simulation",
+    "page_context": "run",
+    "user_message": "Run the simulation",
+    "fields_profile": "water_pipe",
+    "expect": {
+      "primary_intent": "simulation_execution",
+      "required_tags": [
+        "SimAction"
+      ],
+      "sim_actions_contains": [
+        "start_simulation"
+      ],
+      "forbidden_tags": [
+        "ViewerCmd"
+      ]
+    },
+    "expected_output": "SimAction start_simulation."
+  },
+  {
+    "id": "run-exec-02",
+    "description": "Informal run command",
+    "page_context": "run",
+    "user_message": "Go ahead and start it",
+    "fields_profile": "water_pipe",
+    "expect": {
+      "primary_intent": "simulation_execution",
+      "sim_actions_contains": [
+        "start_simulation"
+      ]
+    },
+    "expected_output": "SimAction start_simulation."
+  },
+  {
+    "id": "run-exec-03",
+    "description": "Execute wording",
+    "page_context": "run",
+    "user_message": "Execute the solver now",
+    "fields_profile": "water_pipe",
+    "expect": {
+      "primary_intent": "simulation_execution",
+      "sim_actions_contains": [
+        "start_simulation"
+      ]
+    },
+    "expected_output": "SimAction start_simulation."
+  },
+  {
+    "id": "run-exec-04",
+    "description": "Allrun style",
+    "page_context": "run",
+    "user_message": "Run Allrun",
+    "fields_profile": "water_pipe",
+    "expect": {
+      "primary_intent": "simulation_execution",
+      "sim_actions_contains": [
+        "start_simulation"
+      ]
+    },
+    "expected_output": "SimAction start_simulation."
+  },
+  {
+    "id": "run-exec-05",
+    "description": "Launch wording",
+    "page_context": "run",
+    "user_message": "Launch the job",
+    "fields_profile": "water_pipe",
+    "expect": {
+      "primary_intent": "simulation_execution",
+      "sim_actions_contains": [
+        "start_simulation"
+      ]
+    },
+    "expected_output": "SimAction start_simulation."
+  },
+  {
+    "id": "run-exec-06",
+    "description": "BlockMesh then run",
+    "page_context": "run",
+    "user_message": "Start blockMesh and run simpleFoam",
+    "fields_profile": "water_pipe",
+    "expect": {
+      "primary_intent": "simulation_execution",
+      "sim_actions_contains": [
+        "start_simulation"
+      ]
+    },
+    "expected_output": "SimAction start_simulation (template commands already configured)."
+  },
+  {
+    "id": "run-exec-07",
+    "description": "Run after parameter mention",
+    "page_context": "run",
+    "user_message": "Set end time to 2 and then run",
+    "fields_profile": "water_pipe",
+    "expect": {
+      "primary_intent": "parameter_configuration",
+      "min_tag_count": 1
+    },
+    "expected_output": "UpdateInputs and/or start_simulation; at least one action tag."
+  },
+  {
+    "id": "run-exec-08",
+    "description": "Simulate wording",
+    "page_context": "run",
+    "user_message": "Please simulate",
+    "fields_profile": "water_pipe",
+    "expect": {
+      "primary_intent": "simulation_execution",
+      "sim_actions_contains": [
+        "start_simulation"
+      ]
+    },
+    "expected_output": "SimAction start_simulation."
+  },
+  {
+    "id": "run-reset-01",
+    "description": "Reset inputs",
+    "page_context": "run",
+    "user_message": "Reset inputs to defaults",
+    "fields_profile": "water_pipe",
+    "expect": {
+      "sim_actions_contains": [
+        "reset_inputs"
+      ],
+      "forbidden_tags": [
+        "ViewerCmd"
+      ]
+    },
+    "expected_output": "SimAction reset_inputs."
+  },
+  {
+    "id": "run-reset-02",
+    "description": "Reset wording variant",
+    "page_context": "run",
+    "user_message": "Restore default parameters",
+    "fields_profile": "water_pipe",
+    "expect": {
+      "sim_actions_contains": [
+        "reset_inputs"
+      ]
+    },
+    "expected_output": "SimAction reset_inputs."
+  },
+  {
+    "id": "run-casual-01",
+    "description": "Greeting",
+    "page_context": "run",
+    "user_message": "Hello",
+    "fields_profile": "water_pipe",
+    "expect": {
+      "forbidden_tags": [
+        "ViewerCmd",
+        "UpdateInputs",
+        "SimAction"
+      ],
+      "plain_text_non_empty": true
+    },
+    "expected_output": "CasualMessage or friendly plain text."
+  },
+  {
+    "id": "run-casual-02",
+    "description": "Capabilities question",
+    "page_context": "run",
+    "user_message": "What can you help me with on this page?",
+    "fields_profile": "water_pipe",
+    "expect": {
+      "plain_text_non_empty": true,
+      "forbidden_tags": [
+        "ViewerCmd"
+      ]
+    },
+    "expected_output": "Describe parameter edits and running simulation."
+  },
+  {
+    "id": "run-casual-03",
+    "description": "Thanks",
+    "page_context": "run",
+    "user_message": "Thanks!",
+    "fields_profile": "water_pipe",
+    "expect": {
+      "forbidden_tags": [
+        "UpdateInputs",
+        "SimAction",
+        "ViewerCmd"
+      ]
+    },
+    "expected_output": "Brief acknowledgment."
+  },
+  {
+    "id": "run-casual-04",
+    "description": "Off-topic",
+    "page_context": "run",
+    "user_message": "What's the weather in Paris?",
+    "fields_profile": "water_pipe",
+    "expect": {
+      "forbidden_tags": [
+        "UpdateInputs",
+        "SimAction",
+        "ViewerCmd"
+      ]
+    },
+    "expected_output": "CasualMessage redirecting to simulation tasks."
+  },
+  {
+    "id": "run-casual-05",
+    "description": "Minimal help request",
+    "page_context": "run",
+    "user_message": "help",
+    "fields_profile": "water_pipe",
+    "expect": {
+      "plain_text_non_empty": true
+    },
+    "expected_output": "Short help about inputs and run."
+  },
+  {
+    "id": "job-view-01",
+    "description": "Next timestep",
+    "page_context": "job",
+    "user_message": "Go to the next time step",
+    "viewer_profile": "job_vtk",
+    "expect": {
+      "primary_intent": "results_analysis",
+      "required_tags": [
+        "ViewerCmd"
+      ],
+      "viewer_actions_contains": [
+        "next_time"
+      ],
+      "forbidden_tags": [
+        "UpdateInputs",
+        "SimAction"
+      ]
+    },
+    "expected_output": "ViewerCmd next_time."
+  },
+  {
+    "id": "job-view-02",
+    "description": "Previous timestep",
+    "page_context": "job",
+    "user_message": "Previous timestep please",
+    "viewer_profile": "job_vtk",
+    "expect": {
+      "primary_intent": "results_analysis",
+      "viewer_actions_contains": [
+        "prev_time"
+      ]
+    },
+    "expected_output": "ViewerCmd prev_time."
+  },
+  {
+    "id": "job-view-03",
+    "description": "Set specific time",
+    "page_context": "job",
+    "user_message": "Set time to 0.15",
+    "viewer_profile": "job_vtk",
+    "expect": {
+      "primary_intent": "results_analysis",
+      "required_tags": [
+        "ViewerCmd"
+      ],
+      "viewer_actions_contains": [
+        "set_time"
+      ]
+    },
+    "expected_output": "ViewerCmd set_time with value 0.15."
+  },
+  {
+    "id": "job-view-04",
+    "description": "Play",
+    "page_context": "job",
+    "user_message": "Play the animation",
+    "viewer_profile": "job_vtk",
+    "expect": {
+      "viewer_actions_contains": [
+        "play"
+      ],
+      "forbidden_tags": [
+        "UpdateInputs"
+      ]
+    },
+    "expected_output": "ViewerCmd play."
+  },
+  {
+    "id": "job-view-05",
+    "description": "Pause",
+    "page_context": "job",
+    "user_message": "Pause",
+    "viewer_profile": "job_vtk",
+    "expect": {
+      "viewer_actions_contains": [
+        "pause"
+      ]
+    },
+    "expected_output": "ViewerCmd pause."
+  },
+  {
+    "id": "job-view-06",
+    "description": "Pressure scalar",
+    "page_context": "job",
+    "user_message": "Show pressure",
+    "viewer_profile": "job_vtk",
+    "expect": {
+      "viewer_actions_contains": [
+        "set_scalar"
+      ],
+      "forbidden_tags": [
+        "UpdateInputs"
+      ]
+    },
+    "expected_output": "ViewerCmd set_scalar p."
+  },
+  {
+    "id": "job-view-07",
+    "description": "Velocity scalar",
+    "page_context": "job",
+    "user_message": "Display velocity field",
+    "viewer_profile": "job_vtk",
+    "expect": {
+      "viewer_actions_contains": [
+        "set_scalar"
+      ]
+    },
+    "expected_output": "ViewerCmd set_scalar U."
+  },
+  {
+    "id": "job-view-08",
+    "description": "Toggle streamlines on",
+    "page_context": "job",
+    "user_message": "Turn on streamlines",
+    "viewer_profile": "job_vtk",
+    "expect": {
+      "viewer_actions_contains": [
+        "toggle_streamlines"
+      ]
+    },
+    "expected_output": "ViewerCmd toggle_streamlines true."
+  },
+  {
+    "id": "job-view-09",
+    "description": "Refresh viewer",
+    "page_context": "job",
+    "user_message": "Refresh the viewer",
+    "viewer_profile": "job_vtk",
+    "expect": {
+      "viewer_actions_contains": [
+        "refresh"
+      ]
+    },
+    "expected_output": "ViewerCmd refresh."
+  },
+  {
+    "id": "job-view-10",
+    "description": "Load VTK",
+    "page_context": "job",
+    "user_message": "Load the VTK data",
+    "viewer_profile": "job_vtk",
+    "expect": {
+      "viewer_actions_contains": [
+        "load"
+      ]
+    },
+    "expected_output": "ViewerCmd load."
+  },
+  {
+    "id": "job-view-11",
+    "description": "Set VTK file",
+    "page_context": "job",
+    "user_message": "Switch to walls.vtk",
+    "viewer_profile": "job_vtk",
+    "expect": {
+      "viewer_actions_contains": [
+        "set_file"
+      ]
+    },
+    "expected_output": "ViewerCmd set_file walls.vtk."
+  },
+  {
+    "id": "job-view-12",
+    "description": "Set region",
+    "page_context": "job",
+    "user_message": "Select the fluid region",
+    "viewer_profile": "job_vtk",
+    "expect": {
+      "viewer_actions_contains": [
+        "set_region"
+      ]
+    },
+    "expected_output": "ViewerCmd set_region fluid."
+  },
+  {
+    "id": "job-view-13",
+    "description": "List times informational",
+    "page_context": "job",
+    "user_message": "What time steps are available?",
+    "viewer_profile": "job_vtk",
+    "expect": {
+      "forbidden_tags": [
+        "UpdateInputs",
+        "SimAction"
+      ],
+      "plain_text_non_empty": true
+    },
+    "expected_output": "List times from ViewerState in plain text."
+  },
+  {
+    "id": "job-view-14",
+    "description": "Compare scalars",
+    "page_context": "job",
+    "user_message": "Show alpha.water",
+    "viewer_profile": "job_vtk",
+    "expect": {
+      "viewer_actions_contains": [
+        "set_scalar"
+      ]
+    },
+    "expected_output": "ViewerCmd set_scalar alpha.water."
+  },
+  {
+    "id": "job-forbid-01",
+    "description": "Change parameter on job page",
+    "page_context": "job",
+    "user_message": "Set end time to 10",
+    "viewer_profile": "job_vtk",
+    "expect": {
+      "forbidden_tags": [
+        "UpdateInputs",
+        "SimAction"
+      ],
+      "plain_text_non_empty": true
+    },
+    "expected_output": "Tell user to use Run page for parameter changes.",
+    "geval_criteria": "Must not use UpdateInputs; should direct user back to run simulation page."
+  },
+  {
+    "id": "job-forbid-02",
+    "description": "Re-run on job page",
+    "page_context": "job",
+    "user_message": "Run the simulation again",
+    "viewer_profile": "job_vtk",
+    "expect": {
+      "forbidden_tags": [
+        "SimAction",
+        "UpdateInputs"
+      ],
+      "plain_text_non_empty": true
+    },
+    "expected_output": "Explain re-run is on run page."
+  },
+  {
+    "id": "job-forbid-03",
+    "description": "Reset on job page",
+    "page_context": "job",
+    "user_message": "Reset all inputs",
+    "viewer_profile": "job_vtk",
+    "expect": {
+      "forbidden_tags": [
+        "UpdateInputs",
+        "SimAction"
+      ]
+    },
+    "expected_output": "No reset SimAction on job page."
+  },
+  {
+    "id": "job-forbid-04",
+    "description": "Invalid time not in ViewerState",
+    "page_context": "job",
+    "user_message": "Set time to 99.99",
+    "viewer_profile": "job_vtk",
+    "expect": {
+      "forbidden_tags": [
+        "UpdateInputs"
+      ],
+      "plain_text_non_empty": true
+    },
+    "expected_output": "Warn that 99.99 is not in available times or pick nearest.",
+    "geval_criteria": "Should not invent timesteps; reference ViewerState times list."
+  },
+  {
+    "id": "route-01",
+    "description": "Analysis wording on run page",
+    "page_context": "run",
+    "user_message": "Plot the pressure field from the results",
+    "fields_profile": "water_pipe",
+    "expect": {
+      "forbidden_tags": [
+        "ViewerCmd"
+      ],
+      "plain_text_non_empty": true
+    },
+    "expected_output": "Explain results are on the Job page after the simulation finishes."
+  },
+  {
+    "id": "route-02",
+    "description": "Parameter wording on job page",
+    "page_context": "job",
+    "user_message": "Increase inlet velocity",
+    "viewer_profile": "job_vtk",
+    "expect": {
+      "forbidden_tags": [
+        "UpdateInputs"
+      ]
+    },
+    "expected_output": "Redirect to run page for parameter edits."
+  },
+  {
+    "id": "route-03",
+    "description": "Streamlines off",
+    "page_context": "job",
+    "user_message": "Hide streamlines",
+    "viewer_profile": "job_vtk",
+    "expect": {
+      "viewer_actions_contains": [
+        "toggle_streamlines"
+      ]
+    },
+    "expected_output": "ViewerCmd toggle_streamlines false."
+  }
+]

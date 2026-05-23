@@ -1,0 +1,3145 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Forge APIs (merged)",
+    "version": "1.0.0",
+    "description": "Single-file catalog of all Forge FastAPI services. Prefer the Scalar UI at `/api-docs/` (one document per service). Per-service Swagger remains at each service `/docs`. Colliding routes (e.g. multiple `/health`) are under `/_internal/{service}/`."
+  },
+  "tags": [
+    {
+      "name": "simulation-health",
+      "description": "[Simulation] Service health"
+    },
+    {
+      "name": "simulation-jobs",
+      "description": "[Simulation] CFD job lifecycle"
+    },
+    {
+      "name": "simulation-simulations",
+      "description": "[Simulation] Simulation templates"
+    },
+    {
+      "name": "simulation-run-instructions",
+      "description": "[Simulation] Reusable command presets"
+    },
+    {
+      "name": "runner-health",
+      "description": "[Runner] Docker and volume configuration"
+    },
+    {
+      "name": "runner-internal",
+      "description": "[Runner] Runner API for simulation service only"
+    },
+    {
+      "name": "ics-health",
+      "description": "[ICS] Service health and intent catalog"
+    },
+    {
+      "name": "ics-classification",
+      "description": "[ICS] Intent classification"
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": [
+          "bff-health"
+        ],
+        "summary": "BFF health",
+        "description": "BFF status and downstream simulation/CCS health. Lists links to other services' docs.",
+        "operationId": "bff.health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "x-forge-service": "bff",
+        "x-forge-original-path": "/health"
+      }
+    },
+    "/api/jobs": {
+      "get": {
+        "tags": [
+          "bff-jobs"
+        ],
+        "summary": "List jobs",
+        "description": "List CFD jobs.\n\n**Upstream:** `GET simulation /api/jobs`",
+        "responses": {
+          "200": {
+            "description": "Proxied response (status and body pass through from upstream).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found (upstream)"
+          },
+          "502": {
+            "description": "Upstream unavailable"
+          }
+        },
+        "x-forge-service": "bff",
+        "x-forge-original-path": "/api/jobs"
+      },
+      "post": {
+        "tags": [
+          "bff-jobs"
+        ],
+        "summary": "Create job (upload case ZIP)",
+        "description": "Multipart upload of a case archive.\n\n**Upstream:** `POST simulation /api/jobs`",
+        "responses": {
+          "200": {
+            "description": "Proxied response (status and body pass through from upstream).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found (upstream)"
+          },
+          "502": {
+            "description": "Upstream unavailable"
+          }
+        },
+        "x-forge-service": "bff",
+        "x-forge-original-path": "/api/jobs"
+      }
+    },
+    "/api/jobs/{job_id}": {
+      "get": {
+        "tags": [
+          "bff-jobs"
+        ],
+        "summary": "Get job",
+        "description": "Job metadata and status.\n\n**Upstream:** `GET simulation /api/jobs/{job_id}`",
+        "responses": {
+          "200": {
+            "description": "Proxied response (status and body pass through from upstream).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found (upstream)"
+          },
+          "502": {
+            "description": "Upstream unavailable"
+          }
+        },
+        "x-forge-service": "bff",
+        "x-forge-original-path": "/api/jobs/{job_id}"
+      }
+    },
+    "/api/jobs/{job_id}/log": {
+      "get": {
+        "tags": [
+          "bff-jobs"
+        ],
+        "summary": "Get job log",
+        "description": "Solver log text.\n\n**Upstream:** `GET simulation /api/jobs/{job_id}/log`",
+        "responses": {
+          "200": {
+            "description": "Proxied response (status and body pass through from upstream).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found (upstream)"
+          },
+          "502": {
+            "description": "Upstream unavailable"
+          }
+        },
+        "x-forge-service": "bff",
+        "x-forge-original-path": "/api/jobs/{job_id}/log"
+      }
+    },
+    "/api/jobs/{job_id}/outputs": {
+      "get": {
+        "tags": [
+          "bff-jobs"
+        ],
+        "summary": "List job outputs",
+        "description": "Time directories, regions, VTK/foam flags.\n\n**Upstream:** `GET simulation /api/jobs/{job_id}/outputs`",
+        "responses": {
+          "200": {
+            "description": "Proxied response (status and body pass through from upstream).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found (upstream)"
+          },
+          "502": {
+            "description": "Upstream unavailable"
+          }
+        },
+        "x-forge-service": "bff",
+        "x-forge-original-path": "/api/jobs/{job_id}/outputs"
+      }
+    },
+    "/api/jobs/{job_id}/download": {
+      "get": {
+        "tags": [
+          "bff-jobs"
+        ],
+        "summary": "Download case archive",
+        "description": "ZIP download of the job case directory.\n\n**Upstream:** `GET simulation /api/jobs/{job_id}/download`",
+        "responses": {
+          "200": {
+            "description": "Proxied binary response from upstream.",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        },
+        "x-forge-service": "bff",
+        "x-forge-original-path": "/api/jobs/{job_id}/download"
+      }
+    },
+    "/api/jobs/{job_id}/case/{file_path}": {
+      "get": {
+        "tags": [
+          "bff-jobs"
+        ],
+        "summary": "Read case file",
+        "description": "Fetch a file under the job case tree.\n\n**Upstream:** `GET simulation /api/jobs/{job_id}/case/{file_path}`",
+        "responses": {
+          "200": {
+            "description": "Proxied response (status and body pass through from upstream).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found (upstream)"
+          },
+          "502": {
+            "description": "Upstream unavailable"
+          }
+        },
+        "x-forge-service": "bff",
+        "x-forge-original-path": "/api/jobs/{job_id}/case/{file_path}"
+      }
+    },
+    "/api/simulations": {
+      "get": {
+        "tags": [
+          "bff-simulations"
+        ],
+        "summary": "List simulations",
+        "description": "Simulation templates.\n\n**Upstream:** `GET simulation /api/simulations`",
+        "responses": {
+          "200": {
+            "description": "Proxied response (status and body pass through from upstream).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found (upstream)"
+          },
+          "502": {
+            "description": "Upstream unavailable"
+          }
+        },
+        "x-forge-service": "bff",
+        "x-forge-original-path": "/api/simulations"
+      },
+      "post": {
+        "tags": [
+          "bff-simulations"
+        ],
+        "summary": "Create simulation",
+        "description": "Create template (multipart).\n\n**Upstream:** `POST simulation /api/simulations`",
+        "responses": {
+          "200": {
+            "description": "Proxied response (status and body pass through from upstream).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found (upstream)"
+          },
+          "502": {
+            "description": "Upstream unavailable"
+          }
+        },
+        "x-forge-service": "bff",
+        "x-forge-original-path": "/api/simulations"
+      }
+    },
+    "/api/simulations/analyze-zip": {
+      "post": {
+        "tags": [
+          "bff-simulations"
+        ],
+        "summary": "Analyze case ZIP",
+        "description": "Inspect archive before creating a simulation.\n\n**Upstream:** `POST simulation /api/simulations/analyze-zip`",
+        "responses": {
+          "200": {
+            "description": "Proxied response (status and body pass through from upstream).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found (upstream)"
+          },
+          "502": {
+            "description": "Upstream unavailable"
+          }
+        },
+        "x-forge-service": "bff",
+        "x-forge-original-path": "/api/simulations/analyze-zip"
+      }
+    },
+    "/api/simulations/{sim_id}": {
+      "get": {
+        "tags": [
+          "bff-simulations"
+        ],
+        "summary": "Get simulation",
+        "description": "Template metadata.\n\n**Upstream:** `GET simulation /api/simulations/{sim_id}`",
+        "responses": {
+          "200": {
+            "description": "Proxied response (status and body pass through from upstream).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found (upstream)"
+          },
+          "502": {
+            "description": "Upstream unavailable"
+          }
+        },
+        "x-forge-service": "bff",
+        "x-forge-original-path": "/api/simulations/{sim_id}"
+      },
+      "patch": {
+        "tags": [
+          "bff-simulations"
+        ],
+        "summary": "Update simulation",
+        "description": "Update template fields.\n\n**Upstream:** `PATCH simulation /api/simulations/{sim_id}`",
+        "responses": {
+          "200": {
+            "description": "Proxied response (status and body pass through from upstream).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found (upstream)"
+          },
+          "502": {
+            "description": "Upstream unavailable"
+          }
+        },
+        "x-forge-service": "bff",
+        "x-forge-original-path": "/api/simulations/{sim_id}"
+      },
+      "delete": {
+        "tags": [
+          "bff-simulations"
+        ],
+        "summary": "Delete simulation",
+        "description": "Remove template.\n\n**Upstream:** `DELETE simulation /api/simulations/{sim_id}`",
+        "responses": {
+          "200": {
+            "description": "Proxied response (status and body pass through from upstream).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found (upstream)"
+          },
+          "502": {
+            "description": "Upstream unavailable"
+          }
+        },
+        "x-forge-service": "bff",
+        "x-forge-original-path": "/api/simulations/{sim_id}"
+      }
+    },
+    "/api/simulations/{sim_id}/run": {
+      "post": {
+        "tags": [
+          "bff-simulations"
+        ],
+        "summary": "Run simulation",
+        "description": "Start a job from this template.\n\n**Upstream:** `POST simulation /api/simulations/{sim_id}/run`",
+        "responses": {
+          "200": {
+            "description": "Proxied response (status and body pass through from upstream).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found (upstream)"
+          },
+          "502": {
+            "description": "Upstream unavailable"
+          }
+        },
+        "x-forge-service": "bff",
+        "x-forge-original-path": "/api/simulations/{sim_id}/run"
+      }
+    },
+    "/api/simulations/{sim_id}/thumbnail": {
+      "get": {
+        "tags": [
+          "bff-simulations"
+        ],
+        "summary": "Simulation thumbnail",
+        "description": "PNG thumbnail image.\n\n**Upstream:** `GET simulation /api/simulations/{sim_id}/thumbnail`",
+        "responses": {
+          "200": {
+            "description": "Proxied binary response from upstream.",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        },
+        "x-forge-service": "bff",
+        "x-forge-original-path": "/api/simulations/{sim_id}/thumbnail"
+      }
+    },
+    "/api/simulations/{sim_id}/case-analysis": {
+      "get": {
+        "tags": [
+          "bff-simulations"
+        ],
+        "summary": "Case analysis",
+        "description": "Parsed case structure for the UI.\n\n**Upstream:** `GET simulation /api/simulations/{sim_id}/case-analysis`",
+        "responses": {
+          "200": {
+            "description": "Proxied response (status and body pass through from upstream).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found (upstream)"
+          },
+          "502": {
+            "description": "Upstream unavailable"
+          }
+        },
+        "x-forge-service": "bff",
+        "x-forge-original-path": "/api/simulations/{sim_id}/case-analysis"
+      }
+    },
+    "/api/run-instructions": {
+      "get": {
+        "tags": [
+          "bff-run-instructions"
+        ],
+        "summary": "List run instructions",
+        "description": "Reusable command presets.\n\n**Upstream:** `GET simulation /api/run-instructions`",
+        "responses": {
+          "200": {
+            "description": "Proxied response (status and body pass through from upstream).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found (upstream)"
+          },
+          "502": {
+            "description": "Upstream unavailable"
+          }
+        },
+        "x-forge-service": "bff",
+        "x-forge-original-path": "/api/run-instructions"
+      },
+      "post": {
+        "tags": [
+          "bff-run-instructions"
+        ],
+        "summary": "Create run instruction",
+        "description": "Create a preset.\n\n**Upstream:** `POST simulation /api/run-instructions`",
+        "responses": {
+          "200": {
+            "description": "Proxied response (status and body pass through from upstream).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found (upstream)"
+          },
+          "502": {
+            "description": "Upstream unavailable"
+          }
+        },
+        "x-forge-service": "bff",
+        "x-forge-original-path": "/api/run-instructions"
+      }
+    },
+    "/api/run-instructions/{instruction_id}": {
+      "get": {
+        "tags": [
+          "bff-run-instructions"
+        ],
+        "summary": "Get run instruction",
+        "description": "Single preset.\n\n**Upstream:** `GET simulation /api/run-instructions/{instruction_id}`",
+        "responses": {
+          "200": {
+            "description": "Proxied response (status and body pass through from upstream).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found (upstream)"
+          },
+          "502": {
+            "description": "Upstream unavailable"
+          }
+        },
+        "x-forge-service": "bff",
+        "x-forge-original-path": "/api/run-instructions/{instruction_id}"
+      },
+      "patch": {
+        "tags": [
+          "bff-run-instructions"
+        ],
+        "summary": "Update run instruction",
+        "description": "Update preset fields.\n\n**Upstream:** `PATCH simulation /api/run-instructions/{instruction_id}`",
+        "responses": {
+          "200": {
+            "description": "Proxied response (status and body pass through from upstream).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found (upstream)"
+          },
+          "502": {
+            "description": "Upstream unavailable"
+          }
+        },
+        "x-forge-service": "bff",
+        "x-forge-original-path": "/api/run-instructions/{instruction_id}"
+      },
+      "delete": {
+        "tags": [
+          "bff-run-instructions"
+        ],
+        "summary": "Delete run instruction",
+        "description": "Remove preset.\n\n**Upstream:** `DELETE simulation /api/run-instructions/{instruction_id}`",
+        "responses": {
+          "200": {
+            "description": "Proxied response (status and body pass through from upstream).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found (upstream)"
+          },
+          "502": {
+            "description": "Upstream unavailable"
+          }
+        },
+        "x-forge-service": "bff",
+        "x-forge-original-path": "/api/run-instructions/{instruction_id}"
+      }
+    },
+    "/api/conversations": {
+      "get": {
+        "tags": [
+          "bff-conversations"
+        ],
+        "summary": "List conversations",
+        "description": "AI chat conversations.\n\n**Upstream:** `GET ccs /api/conversations`",
+        "responses": {
+          "200": {
+            "description": "Proxied response (status and body pass through from upstream).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found (upstream)"
+          },
+          "502": {
+            "description": "Upstream unavailable"
+          }
+        },
+        "x-forge-service": "bff",
+        "x-forge-original-path": "/api/conversations"
+      },
+      "post": {
+        "tags": [
+          "bff-conversations"
+        ],
+        "summary": "Create conversation",
+        "description": "Start a new conversation.\n\n**Upstream:** `POST ccs /api/conversations`",
+        "responses": {
+          "200": {
+            "description": "Proxied response (status and body pass through from upstream).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found (upstream)"
+          },
+          "502": {
+            "description": "Upstream unavailable"
+          }
+        },
+        "x-forge-service": "bff",
+        "x-forge-original-path": "/api/conversations"
+      }
+    },
+    "/api/conversations/{conversation_id}": {
+      "get": {
+        "tags": [
+          "bff-conversations"
+        ],
+        "summary": "Get conversation",
+        "description": "Conversation with messages.\n\n**Upstream:** `GET ccs /api/conversations/{conversation_id}`",
+        "responses": {
+          "200": {
+            "description": "Proxied response (status and body pass through from upstream).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found (upstream)"
+          },
+          "502": {
+            "description": "Upstream unavailable"
+          }
+        },
+        "x-forge-service": "bff",
+        "x-forge-original-path": "/api/conversations/{conversation_id}"
+      },
+      "delete": {
+        "tags": [
+          "bff-conversations"
+        ],
+        "summary": "Delete conversation",
+        "description": "Remove conversation.\n\n**Upstream:** `DELETE ccs /api/conversations/{conversation_id}`",
+        "responses": {
+          "200": {
+            "description": "Proxied response (status and body pass through from upstream).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found (upstream)"
+          },
+          "502": {
+            "description": "Upstream unavailable"
+          }
+        },
+        "x-forge-service": "bff",
+        "x-forge-original-path": "/api/conversations/{conversation_id}"
+      }
+    },
+    "/api/conversations/{conversation_id}/messages": {
+      "get": {
+        "tags": [
+          "bff-conversations"
+        ],
+        "summary": "List messages",
+        "description": "Message history for a conversation.\n\n**Upstream:** `GET ccs /api/conversations/{conversation_id}/messages`",
+        "responses": {
+          "200": {
+            "description": "Proxied response (status and body pass through from upstream).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found (upstream)"
+          },
+          "502": {
+            "description": "Upstream unavailable"
+          }
+        },
+        "x-forge-service": "bff",
+        "x-forge-original-path": "/api/conversations/{conversation_id}/messages"
+      }
+    },
+    "/api/ai/generate-thumbnail": {
+      "post": {
+        "tags": [
+          "bff-ai"
+        ],
+        "summary": "Generate thumbnail (AI)",
+        "description": "PNG thumbnail via Vertex image model.\n\n**Upstream:** `POST ccs /generate-thumbnail`",
+        "responses": {
+          "200": {
+            "description": "Proxied binary response from upstream.",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        },
+        "x-forge-service": "bff",
+        "x-forge-original-path": "/api/ai/generate-thumbnail"
+      }
+    },
+    "/viewer": {
+      "get": {
+        "tags": [
+          "bff-viewer"
+        ],
+        "summary": "Trame viewer (root)",
+        "description": "VTK iframe entrypoint.\n\n**Upstream:** `GET trame-viewer /`",
+        "responses": {
+          "200": {
+            "description": "Proxied HTML/assets from trame-viewer.",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "x-forge-service": "bff",
+        "x-forge-original-path": "/viewer"
+      }
+    },
+    "/viewer/{path}": {
+      "get": {
+        "tags": [
+          "bff-viewer"
+        ],
+        "summary": "Trame viewer assets",
+        "description": "Static assets and subpaths under the viewer app.\n\n**Upstream:** `GET trame-viewer /{path}`",
+        "responses": {
+          "200": {
+            "description": "Proxied HTML/assets from trame-viewer.",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "x-forge-service": "bff",
+        "x-forge-original-path": "/viewer/{path}"
+      }
+    },
+    "/api/jobs/{job_id}/ws": {
+      "get": {
+        "tags": [
+          "bff-jobs"
+        ],
+        "summary": "Job log stream (WebSocket)",
+        "description": "Live tail of solver logs for a job.\n\n**WebSocket** \u2014 connect with `ws://` or `wss://`. **Upstream:** `WS simulation /api/jobs/{job_id}/ws`",
+        "responses": {
+          "101": {
+            "description": "Switching Protocols (WebSocket upgrade)"
+          }
+        },
+        "x-forge-service": "bff",
+        "x-forge-original-path": "/api/jobs/{job_id}/ws"
+      }
+    },
+    "/api/ai/ws": {
+      "get": {
+        "tags": [
+          "bff-ai"
+        ],
+        "summary": "AI chat (WebSocket)",
+        "description": "Streaming chat (`init`, `user_message`, `update_context`).\n\n**WebSocket** \u2014 connect with `ws://` or `wss://`. **Upstream:** `WS ccs /ws`",
+        "responses": {
+          "101": {
+            "description": "Switching Protocols (WebSocket upgrade)"
+          }
+        },
+        "x-forge-service": "bff",
+        "x-forge-original-path": "/api/ai/ws"
+      }
+    },
+    "/viewer/ws": {
+      "get": {
+        "tags": [
+          "bff-viewer"
+        ],
+        "summary": "Trame wslink (WebSocket)",
+        "description": "VTK remote rendering session.\n\n**WebSocket** \u2014 connect with `ws://` or `wss://`. **Upstream:** `WS trame-viewer /ws`",
+        "responses": {
+          "101": {
+            "description": "Switching Protocols (WebSocket upgrade)"
+          }
+        },
+        "x-forge-service": "bff",
+        "x-forge-original-path": "/viewer/ws"
+      }
+    },
+    "/_internal/simulation/api/jobs/{job_id}/outputs": {
+      "get": {
+        "summary": "Get Job Outputs",
+        "operationId": "simulation.get_job_outputs_api_jobs__job_id__outputs_get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Job Outputs Api Jobs  Job Id  Outputs Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-forge-service": "simulation",
+        "x-forge-original-path": "/api/jobs/{job_id}/outputs",
+        "tags": [
+          "simulation-default"
+        ],
+        "description": "**Namespaced path** (collision with another service). **Actual URL on Simulation:** `/api/jobs/{job_id}/outputs`",
+        "x-forge-namespaced": true
+      }
+    },
+    "/_internal/simulation/health": {
+      "get": {
+        "summary": "Health",
+        "operationId": "simulation.health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Health Health Get"
+                }
+              }
+            }
+          }
+        },
+        "x-forge-service": "simulation",
+        "x-forge-original-path": "/health",
+        "tags": [
+          "simulation-default"
+        ],
+        "description": "**Namespaced path** (collision with another service). **Actual URL on Simulation:** `/health`",
+        "x-forge-namespaced": true
+      }
+    },
+    "/_internal/simulation/api/run-instructions": {
+      "get": {
+        "summary": "List Run Instructions",
+        "operationId": "simulation.list_run_instructions_api_run_instructions_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response List Run Instructions Api Run Instructions Get"
+                }
+              }
+            }
+          }
+        },
+        "x-forge-service": "simulation",
+        "x-forge-original-path": "/api/run-instructions",
+        "tags": [
+          "simulation-default"
+        ],
+        "description": "**Namespaced path** (collision with another service). **Actual URL on Simulation:** `/api/run-instructions`",
+        "x-forge-namespaced": true
+      },
+      "post": {
+        "summary": "Create Run Instruction",
+        "operationId": "simulation.create_run_instruction_api_run_instructions_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RunInstructionCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Create Run Instruction Api Run Instructions Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-forge-service": "simulation",
+        "x-forge-original-path": "/api/run-instructions",
+        "tags": [
+          "simulation-default"
+        ],
+        "description": "**Namespaced path** (collision with another service). **Actual URL on Simulation:** `/api/run-instructions`",
+        "x-forge-namespaced": true
+      }
+    },
+    "/_internal/simulation/api/run-instructions/{instruction_id}": {
+      "get": {
+        "summary": "Get Run Instruction",
+        "operationId": "simulation.get_run_instruction_api_run_instructions__instruction_id__get",
+        "parameters": [
+          {
+            "name": "instruction_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Instruction Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Run Instruction Api Run Instructions  Instruction Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-forge-service": "simulation",
+        "x-forge-original-path": "/api/run-instructions/{instruction_id}",
+        "tags": [
+          "simulation-default"
+        ],
+        "description": "**Namespaced path** (collision with another service). **Actual URL on Simulation:** `/api/run-instructions/{instruction_id}`",
+        "x-forge-namespaced": true
+      },
+      "patch": {
+        "summary": "Update Run Instruction",
+        "operationId": "simulation.update_run_instruction_api_run_instructions__instruction_id__patch",
+        "parameters": [
+          {
+            "name": "instruction_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Instruction Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RunInstructionUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Update Run Instruction Api Run Instructions  Instruction Id  Patch"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-forge-service": "simulation",
+        "x-forge-original-path": "/api/run-instructions/{instruction_id}",
+        "tags": [
+          "simulation-default"
+        ],
+        "description": "**Namespaced path** (collision with another service). **Actual URL on Simulation:** `/api/run-instructions/{instruction_id}`",
+        "x-forge-namespaced": true
+      },
+      "delete": {
+        "summary": "Delete Run Instruction",
+        "operationId": "simulation.delete_run_instruction_api_run_instructions__instruction_id__delete",
+        "parameters": [
+          {
+            "name": "instruction_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Instruction Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Delete Run Instruction Api Run Instructions  Instruction Id  Delete"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-forge-service": "simulation",
+        "x-forge-original-path": "/api/run-instructions/{instruction_id}",
+        "tags": [
+          "simulation-default"
+        ],
+        "description": "**Namespaced path** (collision with another service). **Actual URL on Simulation:** `/api/run-instructions/{instruction_id}`",
+        "x-forge-namespaced": true
+      }
+    },
+    "/_internal/simulation/api/simulations/analyze-zip": {
+      "post": {
+        "summary": "Analyze Zip",
+        "operationId": "simulation.analyze_zip_api_simulations_analyze_zip_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_analyze_zip_api_simulations_analyze_zip_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Analyze Zip Api Simulations Analyze Zip Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-forge-service": "simulation",
+        "x-forge-original-path": "/api/simulations/analyze-zip",
+        "tags": [
+          "simulation-default"
+        ],
+        "description": "**Namespaced path** (collision with another service). **Actual URL on Simulation:** `/api/simulations/analyze-zip`",
+        "x-forge-namespaced": true
+      }
+    },
+    "/_internal/simulation/api/simulations": {
+      "get": {
+        "summary": "List Simulations",
+        "operationId": "simulation.list_simulations_api_simulations_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response List Simulations Api Simulations Get"
+                }
+              }
+            }
+          }
+        },
+        "x-forge-service": "simulation",
+        "x-forge-original-path": "/api/simulations",
+        "tags": [
+          "simulation-default"
+        ],
+        "description": "**Namespaced path** (collision with another service). **Actual URL on Simulation:** `/api/simulations`",
+        "x-forge-namespaced": true
+      },
+      "post": {
+        "summary": "Create Simulation",
+        "operationId": "simulation.create_simulation_api_simulations_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_create_simulation_api_simulations_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Create Simulation Api Simulations Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-forge-service": "simulation",
+        "x-forge-original-path": "/api/simulations",
+        "tags": [
+          "simulation-default"
+        ],
+        "description": "**Namespaced path** (collision with another service). **Actual URL on Simulation:** `/api/simulations`",
+        "x-forge-namespaced": true
+      }
+    },
+    "/_internal/simulation/api/simulations/{sim_id}": {
+      "get": {
+        "summary": "Get Simulation",
+        "operationId": "simulation.get_simulation_api_simulations__sim_id__get",
+        "parameters": [
+          {
+            "name": "sim_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Sim Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Simulation Api Simulations  Sim Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-forge-service": "simulation",
+        "x-forge-original-path": "/api/simulations/{sim_id}",
+        "tags": [
+          "simulation-default"
+        ],
+        "description": "**Namespaced path** (collision with another service). **Actual URL on Simulation:** `/api/simulations/{sim_id}`",
+        "x-forge-namespaced": true
+      },
+      "patch": {
+        "summary": "Update Simulation",
+        "operationId": "simulation.update_simulation_api_simulations__sim_id__patch",
+        "parameters": [
+          {
+            "name": "sim_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Sim Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_update_simulation_api_simulations__sim_id__patch"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Update Simulation Api Simulations  Sim Id  Patch"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-forge-service": "simulation",
+        "x-forge-original-path": "/api/simulations/{sim_id}",
+        "tags": [
+          "simulation-default"
+        ],
+        "description": "**Namespaced path** (collision with another service). **Actual URL on Simulation:** `/api/simulations/{sim_id}`",
+        "x-forge-namespaced": true
+      },
+      "delete": {
+        "summary": "Delete Simulation",
+        "operationId": "simulation.delete_simulation_api_simulations__sim_id__delete",
+        "parameters": [
+          {
+            "name": "sim_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Sim Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Delete Simulation Api Simulations  Sim Id  Delete"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-forge-service": "simulation",
+        "x-forge-original-path": "/api/simulations/{sim_id}",
+        "tags": [
+          "simulation-default"
+        ],
+        "description": "**Namespaced path** (collision with another service). **Actual URL on Simulation:** `/api/simulations/{sim_id}`",
+        "x-forge-namespaced": true
+      }
+    },
+    "/_internal/simulation/api/simulations/{sim_id}/case-analysis": {
+      "get": {
+        "summary": "Analyze Simulation Stored Case",
+        "description": "Return the same shape as POST /api/simulations/analyze-zip for the template's stored case.zip.\n\n**Namespaced path** (collision with another service). **Actual URL on Simulation:** `/api/simulations/{sim_id}/case-analysis`",
+        "operationId": "simulation.analyze_simulation_stored_case_api_simulations__sim_id__case_analysis_get",
+        "parameters": [
+          {
+            "name": "sim_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Sim Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Analyze Simulation Stored Case Api Simulations  Sim Id  Case Analysis Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-forge-service": "simulation",
+        "x-forge-original-path": "/api/simulations/{sim_id}/case-analysis",
+        "tags": [
+          "simulation-default"
+        ],
+        "x-forge-namespaced": true
+      }
+    },
+    "/_internal/simulation/api/simulations/{sim_id}/thumbnail": {
+      "get": {
+        "summary": "Get Simulation Thumbnail",
+        "operationId": "simulation.get_simulation_thumbnail_api_simulations__sim_id__thumbnail_get",
+        "parameters": [
+          {
+            "name": "sim_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Sim Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-forge-service": "simulation",
+        "x-forge-original-path": "/api/simulations/{sim_id}/thumbnail",
+        "tags": [
+          "simulation-default"
+        ],
+        "description": "**Namespaced path** (collision with another service). **Actual URL on Simulation:** `/api/simulations/{sim_id}/thumbnail`",
+        "x-forge-namespaced": true
+      }
+    },
+    "/_internal/simulation/api/simulations/{sim_id}/run": {
+      "post": {
+        "summary": "Run Simulation",
+        "description": "Create a job from a simulation template, optionally overriding input fields.\n\n**Namespaced path** (collision with another service). **Actual URL on Simulation:** `/api/simulations/{sim_id}/run`",
+        "operationId": "simulation.run_simulation_api_simulations__sim_id__run_post",
+        "parameters": [
+          {
+            "name": "sim_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Sim Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "additionalProperties": true
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Run Simulation Api Simulations  Sim Id  Run Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-forge-service": "simulation",
+        "x-forge-original-path": "/api/simulations/{sim_id}/run",
+        "tags": [
+          "simulation-default"
+        ],
+        "x-forge-namespaced": true
+      }
+    },
+    "/_internal/simulation/api/jobs": {
+      "get": {
+        "summary": "List Jobs",
+        "operationId": "simulation.list_jobs_api_jobs_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response List Jobs Api Jobs Get"
+                }
+              }
+            }
+          }
+        },
+        "x-forge-service": "simulation",
+        "x-forge-original-path": "/api/jobs",
+        "tags": [
+          "simulation-default"
+        ],
+        "description": "**Namespaced path** (collision with another service). **Actual URL on Simulation:** `/api/jobs`",
+        "x-forge-namespaced": true
+      },
+      "post": {
+        "summary": "Create Job",
+        "operationId": "simulation.create_job_api_jobs_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_create_job_api_jobs_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Create Job Api Jobs Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-forge-service": "simulation",
+        "x-forge-original-path": "/api/jobs",
+        "tags": [
+          "simulation-default"
+        ],
+        "description": "**Namespaced path** (collision with another service). **Actual URL on Simulation:** `/api/jobs`",
+        "x-forge-namespaced": true
+      }
+    },
+    "/_internal/simulation/api/jobs/{job_id}": {
+      "get": {
+        "summary": "Get Job",
+        "operationId": "simulation.get_job_api_jobs__job_id__get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Job Api Jobs  Job Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-forge-service": "simulation",
+        "x-forge-original-path": "/api/jobs/{job_id}",
+        "tags": [
+          "simulation-default"
+        ],
+        "description": "**Namespaced path** (collision with another service). **Actual URL on Simulation:** `/api/jobs/{job_id}`",
+        "x-forge-namespaced": true
+      }
+    },
+    "/_internal/simulation/api/jobs/{job_id}/log": {
+      "get": {
+        "summary": "Get Job Log",
+        "operationId": "simulation.get_job_log_api_jobs__job_id__log_get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Job Log Api Jobs  Job Id  Log Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-forge-service": "simulation",
+        "x-forge-original-path": "/api/jobs/{job_id}/log",
+        "tags": [
+          "simulation-default"
+        ],
+        "description": "**Namespaced path** (collision with another service). **Actual URL on Simulation:** `/api/jobs/{job_id}/log`",
+        "x-forge-namespaced": true
+      }
+    },
+    "/_internal/simulation/api/jobs/{job_id}/download": {
+      "get": {
+        "summary": "Download Job",
+        "operationId": "simulation.download_job_api_jobs__job_id__download_get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-forge-service": "simulation",
+        "x-forge-original-path": "/api/jobs/{job_id}/download",
+        "tags": [
+          "simulation-default"
+        ],
+        "description": "**Namespaced path** (collision with another service). **Actual URL on Simulation:** `/api/jobs/{job_id}/download`",
+        "x-forge-namespaced": true
+      }
+    },
+    "/_internal/simulation/api/jobs/{job_id}/case/{file_path}": {
+      "get": {
+        "summary": "Get Case File",
+        "operationId": "simulation.get_case_file_api_jobs__job_id__case__file_path__get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "file_path",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "File Path"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-forge-service": "simulation",
+        "x-forge-original-path": "/api/jobs/{job_id}/case/{file_path}",
+        "tags": [
+          "simulation-default"
+        ],
+        "description": "**Namespaced path** (collision with another service). **Actual URL on Simulation:** `/api/jobs/{job_id}/case/{file_path}`",
+        "x-forge-namespaced": true
+      }
+    },
+    "/_internal/runner/health": {
+      "get": {
+        "summary": "Health",
+        "operationId": "runner.health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Health Health Get"
+                }
+              }
+            }
+          }
+        },
+        "x-forge-service": "runner",
+        "x-forge-original-path": "/health",
+        "tags": [
+          "runner-default"
+        ],
+        "description": "**Namespaced path** (collision with another service). **Actual URL on Runner:** `/health`",
+        "x-forge-namespaced": true
+      }
+    },
+    "/internal/run": {
+      "post": {
+        "summary": "Run Case",
+        "operationId": "runner.run_case_internal_run_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RunRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/runner_HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-forge-service": "runner",
+        "x-forge-original-path": "/internal/run",
+        "tags": [
+          "runner-default"
+        ]
+      }
+    },
+    "/internal/cleanup/{job_id}": {
+      "post": {
+        "summary": "Cleanup",
+        "description": "Optional: remove job workspace on runner (backend may own retention).",
+        "operationId": "runner.cleanup_internal_cleanup__job_id__post",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Response Cleanup Internal Cleanup  Job Id  Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/runner_HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-forge-service": "runner",
+        "x-forge-original-path": "/internal/cleanup/{job_id}",
+        "tags": [
+          "runner-default"
+        ]
+      }
+    },
+    "/_internal/ccs/health": {
+      "get": {
+        "tags": [
+          "ccs-health"
+        ],
+        "summary": "Health",
+        "operationId": "ccs.health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "x-forge-service": "ccs",
+        "x-forge-original-path": "/health",
+        "description": "**Namespaced path** (collision with another service). **Actual URL on CCS:** `/health`",
+        "x-forge-namespaced": true
+      }
+    },
+    "/_internal/ccs/api/conversations": {
+      "get": {
+        "tags": [
+          "ccs-conversations"
+        ],
+        "summary": "List Conversations",
+        "operationId": "ccs.list_conversations_api_conversations_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "x-forge-service": "ccs",
+        "x-forge-original-path": "/api/conversations",
+        "description": "**Namespaced path** (collision with another service). **Actual URL on CCS:** `/api/conversations`",
+        "x-forge-namespaced": true
+      },
+      "post": {
+        "tags": [
+          "ccs-conversations"
+        ],
+        "summary": "Create Conversation",
+        "operationId": "ccs.create_conversation_api_conversations_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConversationCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationSummary"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ccs_HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-forge-service": "ccs",
+        "x-forge-original-path": "/api/conversations",
+        "description": "**Namespaced path** (collision with another service). **Actual URL on CCS:** `/api/conversations`",
+        "x-forge-namespaced": true
+      }
+    },
+    "/_internal/ccs/api/conversations/{conversation_id}": {
+      "get": {
+        "tags": [
+          "ccs-conversations"
+        ],
+        "summary": "Get Conversation",
+        "operationId": "ccs.get_conversation_api_conversations__conversation_id__get",
+        "parameters": [
+          {
+            "name": "conversation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Conversation Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ccs_HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-forge-service": "ccs",
+        "x-forge-original-path": "/api/conversations/{conversation_id}",
+        "description": "**Namespaced path** (collision with another service). **Actual URL on CCS:** `/api/conversations/{conversation_id}`",
+        "x-forge-namespaced": true
+      },
+      "delete": {
+        "tags": [
+          "ccs-conversations"
+        ],
+        "summary": "Delete Conversation",
+        "operationId": "ccs.delete_conversation_api_conversations__conversation_id__delete",
+        "parameters": [
+          {
+            "name": "conversation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Conversation Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ccs_HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-forge-service": "ccs",
+        "x-forge-original-path": "/api/conversations/{conversation_id}",
+        "description": "**Namespaced path** (collision with another service). **Actual URL on CCS:** `/api/conversations/{conversation_id}`",
+        "x-forge-namespaced": true
+      }
+    },
+    "/_internal/ccs/api/conversations/{conversation_id}/messages": {
+      "get": {
+        "tags": [
+          "ccs-conversations"
+        ],
+        "summary": "List Conversation Messages",
+        "operationId": "ccs.list_conversation_messages_api_conversations__conversation_id__messages_get",
+        "parameters": [
+          {
+            "name": "conversation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Conversation Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ccs_HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-forge-service": "ccs",
+        "x-forge-original-path": "/api/conversations/{conversation_id}/messages",
+        "description": "**Namespaced path** (collision with another service). **Actual URL on CCS:** `/api/conversations/{conversation_id}/messages`",
+        "x-forge-namespaced": true
+      }
+    },
+    "/generate-thumbnail": {
+      "post": {
+        "tags": [
+          "ccs-ai"
+        ],
+        "summary": "Generate Thumbnail",
+        "operationId": "ccs.generate_thumbnail_generate_thumbnail_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ThumbnailRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ccs_HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-forge-service": "ccs",
+        "x-forge-original-path": "/generate-thumbnail"
+      }
+    },
+    "/ws": {
+      "get": {
+        "tags": [
+          "ccs-ai"
+        ],
+        "summary": "AI chat (WebSocket)",
+        "description": "Streaming chat over WebSocket. Client sends JSON messages: `init`, `user_message`, `update_context`. Connect with `ws://` or `wss://` (BFF proxy: `/api/ai/ws`).",
+        "responses": {
+          "101": {
+            "description": "Switching Protocols (WebSocket upgrade)"
+          }
+        },
+        "x-forge-service": "ccs",
+        "x-forge-original-path": "/ws"
+      }
+    },
+    "/_internal/ics/health": {
+      "get": {
+        "summary": "Health",
+        "operationId": "ics.health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "x-forge-service": "ics",
+        "x-forge-original-path": "/health",
+        "tags": [
+          "ics-default"
+        ],
+        "description": "**Namespaced path** (collision with another service). **Actual URL on ICS:** `/health`",
+        "x-forge-namespaced": true
+      }
+    },
+    "/intents": {
+      "get": {
+        "summary": "List Intents",
+        "operationId": "ics.list_intents_intents_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "x-forge-service": "ics",
+        "x-forge-original-path": "/intents",
+        "tags": [
+          "ics-default"
+        ]
+      }
+    },
+    "/classify": {
+      "post": {
+        "summary": "Classify",
+        "operationId": "ics.classify_classify_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClassifyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ics_HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-forge-service": "ics",
+        "x-forge-original-path": "/classify",
+        "tags": [
+          "ics-default"
+        ]
+      }
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "BFF (Gateway)"
+    },
+    {
+      "url": "http://localhost:8001",
+      "description": "Simulation"
+    },
+    {
+      "url": "http://forge-runner:8080",
+      "description": "Runner"
+    },
+    {
+      "url": "http://localhost:8081",
+      "description": "CCS"
+    },
+    {
+      "url": "http://ics:8082",
+      "description": "ICS"
+    }
+  ],
+  "x-tagGroups": [
+    {
+      "name": "BFF (Gateway) \u2014 Health",
+      "tags": [
+        "bff-health"
+      ]
+    },
+    {
+      "name": "BFF (Gateway) \u2014 Jobs & simulations",
+      "tags": [
+        "bff-jobs",
+        "bff-simulations",
+        "bff-run-instructions"
+      ]
+    },
+    {
+      "name": "BFF (Gateway) \u2014 Conversations & AI",
+      "tags": [
+        "bff-conversations",
+        "bff-ai"
+      ]
+    },
+    {
+      "name": "BFF (Gateway) \u2014 Viewer",
+      "tags": [
+        "bff-viewer"
+      ]
+    },
+    {
+      "name": "Simulation \u2014 Health",
+      "tags": [
+        "simulation-health"
+      ]
+    },
+    {
+      "name": "Simulation \u2014 Jobs",
+      "tags": [
+        "simulation-jobs"
+      ]
+    },
+    {
+      "name": "Simulation \u2014 Simulations",
+      "tags": [
+        "simulation-simulations",
+        "simulation-run-instructions"
+      ]
+    },
+    {
+      "name": "Runner \u2014 Health",
+      "tags": [
+        "runner-health"
+      ]
+    },
+    {
+      "name": "Runner \u2014 Internal",
+      "tags": [
+        "runner-internal"
+      ]
+    },
+    {
+      "name": "CCS \u2014 Health",
+      "tags": [
+        "ccs-health"
+      ]
+    },
+    {
+      "name": "CCS \u2014 Conversations",
+      "tags": [
+        "ccs-conversations"
+      ]
+    },
+    {
+      "name": "CCS \u2014 AI",
+      "tags": [
+        "ccs-ai"
+      ]
+    },
+    {
+      "name": "ICS \u2014 Health",
+      "tags": [
+        "ics-health"
+      ]
+    },
+    {
+      "name": "ICS \u2014 Classification",
+      "tags": [
+        "ics-classification"
+      ]
+    }
+  ],
+  "components": {
+    "schemas": {
+      "Body_analyze_zip_api_simulations_analyze_zip_post": {
+        "properties": {
+          "case_zip": {
+            "type": "string",
+            "format": "binary",
+            "title": "Case Zip"
+          }
+        },
+        "type": "object",
+        "required": [
+          "case_zip"
+        ],
+        "title": "Body_analyze_zip_api_simulations_analyze_zip_post"
+      },
+      "Body_create_job_api_jobs_post": {
+        "properties": {
+          "case_zip": {
+            "type": "string",
+            "format": "binary",
+            "title": "Case Zip"
+          },
+          "commands": {
+            "type": "string",
+            "title": "Commands",
+            "default": ""
+          },
+          "run_instruction_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Instruction Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "case_zip"
+        ],
+        "title": "Body_create_job_api_jobs_post"
+      },
+      "Body_create_simulation_api_simulations_post": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "default": ""
+          },
+          "commands": {
+            "type": "string",
+            "title": "Commands",
+            "default": ""
+          },
+          "input_fields_json": {
+            "type": "string",
+            "title": "Input Fields Json",
+            "default": "[]"
+          },
+          "case_zip": {
+            "type": "string",
+            "format": "binary",
+            "title": "Case Zip"
+          },
+          "thumbnail": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "binary"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Thumbnail"
+          }
+        },
+        "type": "object",
+        "required": [
+          "title",
+          "case_zip"
+        ],
+        "title": "Body_create_simulation_api_simulations_post"
+      },
+      "Body_update_simulation_api_simulations__sim_id__patch": {
+        "properties": {
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "commands": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Commands"
+          },
+          "input_fields_json": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Fields Json"
+          },
+          "thumbnail": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "binary"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Thumbnail"
+          },
+          "case_zip": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "binary"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Case Zip"
+          }
+        },
+        "type": "object",
+        "title": "Body_update_simulation_api_simulations__sim_id__patch"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "RunInstructionCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "commands": {
+            "type": "string",
+            "maxLength": 50000,
+            "minLength": 1,
+            "title": "Commands"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 10000,
+            "title": "Description",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "commands"
+        ],
+        "title": "RunInstructionCreate"
+      },
+      "RunInstructionUpdate": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "commands": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50000,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Commands"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 10000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "title": "RunInstructionUpdate"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "runner_HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "RunRequest": {
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Job Id"
+          },
+          "commands": {
+            "type": "string",
+            "maxLength": 8000,
+            "minLength": 1,
+            "title": "Commands",
+            "default": "blockMesh && simpleFoam"
+          }
+        },
+        "type": "object",
+        "required": [
+          "job_id"
+        ],
+        "title": "RunRequest"
+      },
+      "RunResponse": {
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "title": "Job Id"
+          },
+          "returncode": {
+            "type": "integer",
+            "title": "Returncode"
+          },
+          "log_path": {
+            "type": "string",
+            "title": "Log Path"
+          }
+        },
+        "type": "object",
+        "required": [
+          "job_id",
+          "returncode",
+          "log_path"
+        ],
+        "title": "RunResponse"
+      },
+      "runner_ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "ConversationCreate": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 500,
+            "title": "Title",
+            "default": ""
+          },
+          "page_context": {
+            "type": "string",
+            "enum": [
+              "run",
+              "job"
+            ],
+            "title": "Page Context",
+            "default": "run"
+          }
+        },
+        "type": "object",
+        "title": "ConversationCreate"
+      },
+      "ConversationDetail": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "page_context": {
+            "type": "string",
+            "enum": [
+              "run",
+              "job"
+            ],
+            "title": "Page Context"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "title": "Updated At"
+          },
+          "message_count": {
+            "type": "integer",
+            "title": "Message Count"
+          },
+          "messages": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Messages"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "page_context",
+          "created_at",
+          "updated_at",
+          "message_count",
+          "messages"
+        ],
+        "title": "ConversationDetail"
+      },
+      "ConversationSummary": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "page_context": {
+            "type": "string",
+            "enum": [
+              "run",
+              "job"
+            ],
+            "title": "Page Context"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "title": "Updated At"
+          },
+          "message_count": {
+            "type": "integer",
+            "title": "Message Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "page_context",
+          "created_at",
+          "updated_at",
+          "message_count"
+        ],
+        "title": "ConversationSummary"
+      },
+      "ccs_HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "ThumbnailRequest": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "default": ""
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "default": ""
+          },
+          "prompt": {
+            "type": "string",
+            "title": "Prompt",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "title": "ThumbnailRequest"
+      },
+      "ccs_ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "ClassifyRequest": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "maxLength": 20000,
+            "minLength": 1,
+            "title": "Message"
+          },
+          "page_context": {
+            "type": "string",
+            "pattern": "^(run|job)$",
+            "title": "Page Context",
+            "default": "run"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "ClassifyRequest"
+      },
+      "ics_HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "ics_ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}

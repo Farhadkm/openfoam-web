@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { ThumbnailWithAiPicker } from "@/app/components/simulation/ThumbnailWithAiPicker";
+import { ForgeSelect } from "@/app/components/ui/ForgeSelect";
 
 export const SIMULATION_ENGINES = [{ value: "openfoam", label: "OpenFOAM" }];
 
@@ -46,13 +47,16 @@ export function SimulationWizardDetailsStep({
 
       <div className="form-group">
         <label htmlFor="wiz-engine">Simulation Engine</label>
-        <select id="wiz-engine" value={engine} onChange={(e) => onEngine(e.target.value)}>
-          {SIMULATION_ENGINES.map((eng) => (
-            <option key={eng.value} value={eng.value}>
-              {eng.label}
-            </option>
-          ))}
-        </select>
+        <ForgeSelect
+          id="wiz-engine"
+          value={engine}
+          onChange={onEngine}
+          options={SIMULATION_ENGINES.map((eng) => ({
+            value: eng.value,
+            label: eng.label,
+          }))}
+          aria-label="Simulation engine"
+        />
         <small className="hint">More engines will be supported in future releases.</small>
       </div>
 

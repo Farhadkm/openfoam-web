@@ -24,4 +24,4 @@ terraform destroy   # when dev host not needed
 
 ## Credential rotation
 
-- **GCP:** replace `ai/credentials/key.json` locally; on AWS update Secrets Manager secret referenced by `gemini_secret_arn` and redeploy/re-bootstrap.
+- **GCP:** replace `backend/credentials/key.json` locally; on AWS update Secrets Manager secret referenced by `gemini_secret_arn` and redeploy/re-bootstrap.

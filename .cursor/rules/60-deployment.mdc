@@ -18,10 +18,10 @@ alwaysApply: false
 - Workflow: push to **`develop`** → build/push images → SSM restart on instance
 - Compose overlay: `docker-compose.aws-dev.yml`
 - **Order:** `terraform apply` → set GitHub secrets (`DEV_PUBLIC_HOST`, `DEV_EC2_INSTANCE_ID`) → push `develop`
-- **Jobs volume:** `JOBS_VOLUME_NAME` / `openfoam-web-jobs-data` must align across backend, runner, and child OpenFOAM containers
+- **Jobs volume:** `JOBS_VOLUME_NAME` / `forge-jobs-data` must align across backend, runner, and child solver containers
 
 ## Build-time URLs (frontend)
 
-`NEXT_PUBLIC_TRAME_VIEWER_URL`, `NEXT_PUBLIC_AI_WS_URL`, and API base must match what the **browser** reaches (`DEV_PUBLIC_HOST` in CI).
+`NEXT_PUBLIC_API_URL` must match what the **browser** reaches for the BFF (`DEV_PUBLIC_HOST:8000` in CI). Trame and AI WebSocket paths are derived from that base.
 
 No production Terraform or `main` deploy in this repository.

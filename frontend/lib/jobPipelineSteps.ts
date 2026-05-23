@@ -35,7 +35,7 @@ function escapeRe(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-/** Ordered OpenFOAM executables found in the job command string (bash). */
+/** Ordered solver executables found in the job command string (bash). */
 export function extractOrderedOpenFoamCommands(commands: string): string[] {
   if (!commands?.trim()) return [];
   const alt = [...OPENFOAM_KNOWN_COMMANDS].sort((a, b) => b.length - a.length).map(escapeRe).join("|");
@@ -56,7 +56,7 @@ export type JobPipelineStep = {
   key: string;
   label: string;
   kind: JobPipelineStepKind;
-  /** OpenFOAM binary when kind === "command" (not set for generic placeholder). */
+  /** Solver binary when kind === "command" (not set for generic placeholder). */
   command?: string;
 };
 

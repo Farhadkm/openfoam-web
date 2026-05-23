@@ -1,11 +1,197 @@
+name: forge
+
+# SigNoz (local tracing UI): http://localhost:8080 — see deploy/signoz/ and docs/operations/monitoring.md
+x-signoz-common: &signoz-common
+  restart: unless-stopped
+  logging:
+    options:
+      max-size: 50m
+      max-file: "3"
+
+x-clickhouse-defaults: &clickhouse-defaults
+  <<: *signoz-common
+  image: clickhouse/clickhouse-server:25.5.6
+  tty: true
+  depends_on:
+    init-clickhouse:
+      condition: service_completed_successfully
+    signoz-zookeeper:
+      condition: service_healthy
+  healthcheck:
+    test: ["CMD", "wget", "--spider", "-q", "0.0.0.0:8123/ping"]
+    interval: 30s
+    timeout: 5s
+    retries: 3
+  ulimits:
+    nproc: 65535
+    nofile:
+      soft: 262144
+      hard: 262144
+  environment:
+    CLICKHOUSE_SKIP_USER_SETUP: "1"
+
+x-zookeeper-defaults: &zookeeper-defaults
+  <<: *signoz-common
+  image: signoz/zookeeper:3.7.1
+  user: root
+  healthcheck:
+    test:
+      - CMD-SHELL
+      - curl -s -m 2 http://localhost:8080/commands/ruok | grep error | grep null
+    interval: 30s
+    timeout: 5s
+    retries: 3
+
+x-db-depend: &db-depend
+  <<: *signoz-common
+  depends_on:
+    signoz-clickhouse:
+      condition: service_healthy
+
+x-otel-environment: &otel-environment
+  OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+  OTEL_TRACES_EXPORTER: otlp
+  OTEL_LOGS_EXPORTER: otlp
+  OTEL_PROPAGATORS: tracecontext,baggage
+  OTEL_RESOURCE_ATTRIBUTES: deployment.environment=local
+  LOG_HTTP_BODY_ENABLED: ${LOG_HTTP_BODY_ENABLED:-true}
+  LOG_HTTP_BODY_MAX: ${LOG_HTTP_BODY_MAX:-1024}
+
+x-otel-depends: &otel-depends
+  otel-collector:
+    condition: service_started
+
 services:
+  init-clickhouse:
+    <<: *signoz-common
+    image: clickhouse/clickhouse-server:25.5.6
+    command:
+      - bash
+      - -c
+      - |
+        version="v0.0.1"
+        node_os=$$(uname -s | tr '[:upper:]' '[:lower:]')
+        node_arch=$$(uname -m | sed s/aarch64/arm64/ | sed s/x86_64/amd64/)
+        echo "Fetching histogram-binary for $${node_os}/$${node_arch}"
+        cd /tmp
+        wget -O histogram-quantile.tar.gz "https://github.com/SigNoz/signoz/releases/download/histogram-quantile%2F$${version}/histogram-quantile_$${node_os}_$${node_arch}.tar.gz"
+        tar -xvzf histogram-quantile.tar.gz
+        mv histogram-quantile /var/lib/clickhouse/user_scripts/histogramQuantile
+    restart: on-failure
+    volumes:
+      - ./deploy/signoz/common/clickhouse/user_scripts:/var/lib/clickhouse/user_scripts/
+
+  signoz-zookeeper:
+    <<: *zookeeper-defaults
+    volumes:
+      - signoz_zookeeper:/bitnami/zookeeper
+    environment:
+      ZOO_SERVER_ID: "1"
+      ALLOW_ANONYMOUS_LOGIN: "yes"
+      ZOO_AUTOPURGE_INTERVAL: "1"
+      ZOO_ENABLE_PROMETHEUS_METRICS: "yes"
+      ZOO_PROMETHEUS_METRICS_PORT_NUMBER: "9141"
+
+  signoz-clickhouse:
+    <<: *clickhouse-defaults
+    volumes:
+      - ./deploy/signoz/common/clickhouse/config.xml:/etc/clickhouse-server/config.xml
+      - ./deploy/signoz/common/clickhouse/users.xml:/etc/clickhouse-server/users.xml
+      - ./deploy/signoz/common/clickhouse/custom-function.xml:/etc/clickhouse-server/custom-function.xml
+      - ./deploy/signoz/common/clickhouse/user_scripts:/var/lib/clickhouse/user_scripts/
+      - ./deploy/signoz/common/clickhouse/cluster.xml:/etc/clickhouse-server/config.d/cluster.xml
+      - signoz_clickhouse:/var/lib/clickhouse/
+
+  signoz-telemetrystore-migrator:
+    <<: *db-depend
+    image: signoz/signoz-otel-collector:v0.144.4
+    environment:
+      SIGNOZ_OTEL_COLLECTOR_CLICKHOUSE_DSN: tcp://signoz-clickhouse:9000
+      SIGNOZ_OTEL_COLLECTOR_CLICKHOUSE_CLUSTER: cluster
+      SIGNOZ_OTEL_COLLECTOR_CLICKHOUSE_REPLICATION: "true"
+      SIGNOZ_OTEL_COLLECTOR_TIMEOUT: 10m
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        /signoz-otel-collector migrate bootstrap &&
+        /signoz-otel-collector migrate sync up &&
+        /signoz-otel-collector migrate async up
+    restart: on-failure
+
+  signoz:
+    <<: *db-depend
+    image: signoz/signoz:v0.124.0
+    ports:
+      - "8080:8080"
+    volumes:
+      - signoz_sqlite:/var/lib/signoz/
+    environment:
+      SIGNOZ_ALERTMANAGER_PROVIDER: signoz
+      SIGNOZ_TELEMETRYSTORE_CLICKHOUSE_DSN: tcp://signoz-clickhouse:9000
+      SIGNOZ_SQLSTORE_SQLITE_PATH: /var/lib/signoz/signoz.db
+      SIGNOZ_TOKENIZER_JWT_SECRET: secret
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "localhost:8080/api/v1/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    depends_on:
+      signoz-clickhouse:
+        condition: service_healthy
+      signoz-telemetrystore-migrator:
+        condition: service_completed_successfully
+
+  signoz-otel-collector:
+    <<: *db-depend
+    image: signoz/signoz-otel-collector:v0.144.4
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        /signoz-otel-collector migrate sync check &&
+        /signoz-otel-collector --config=/etc/otel-collector-config.yaml --copy-path=/var/tmp/collector-config.yaml
+    volumes:
+      - ./deploy/signoz/signoz-otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    environment:
+      OTEL_RESOURCE_ATTRIBUTES: host.name=signoz-host,os.type=linux
+      LOW_CARDINAL_EXCEPTION_GROUPING: "false"
+      SIGNOZ_OTEL_COLLECTOR_CLICKHOUSE_DSN: tcp://signoz-clickhouse:9000
+      SIGNOZ_OTEL_COLLECTOR_CLICKHOUSE_CLUSTER: cluster
+      SIGNOZ_OTEL_COLLECTOR_CLICKHOUSE_REPLICATION: "true"
+      SIGNOZ_OTEL_COLLECTOR_TIMEOUT: 10m
+    expose:
+      - "4317"
+      - "4318"
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/127.0.0.1/4317'"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    depends_on:
+      signoz-clickhouse:
+        condition: service_healthy
+      signoz-telemetrystore-migrator:
+        condition: service_completed_successfully
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.120.0
+    restart: unless-stopped
+    command: ["--config=/etc/otelcol/config.yaml"]
+    volumes:
+      - ./deploy/otel-collector-config.yaml:/etc/otelcol/config.yaml:ro
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+    depends_on:
+      signoz-otel-collector:
+        condition: service_started
+
   mongo:
     image: mongo:7
     restart: unless-stopped
     volumes:
       - mongo_data:/data/db
     # Host binding so MongoDB Compass (and other local tools) can connect.
-    # Backend still uses mongodb://mongo:27017 on the Docker network.
     ports:
       - "127.0.0.1:27017:27017"
     healthcheck:
@@ -15,88 +201,157 @@ services:
       retries: 5
       start_period: 20s
 
-  openfoam-runner:
+  forge-runner:
     build:
-      context: ./openfoam-runner
+      context: ./backend
+    command: ["uvicorn", "services.runner.app:app", "--host", "0.0.0.0", "--port", "8080"]
     environment:
+      <<: *otel-environment
+      OTEL_SERVICE_NAME: forge-runner
       JOBS_ROOT: /jobs
       OPENFOAM_IMAGE: opencfd/openfoam-run:2512
       OPENFOAM_BASHRC: /usr/lib/openfoam/openfoam2512/etc/bashrc
-      # Must match the Docker volume name used for jobs_data below (child containers use the host API).
-      JOBS_VOLUME_NAME: openfoam-web-jobs-data
+      JOBS_VOLUME_NAME: forge-jobs-data
       JOBS_VOLUME_MOUNT: /work
     volumes:
       - jobs_data:/jobs
       - /var/run/docker.sock:/var/run/docker.sock
     expose:
       - "8080"
+    depends_on:
+      <<: *otel-depends
 
-  backend:
+  simulation:
     build:
       context: ./backend
-    ports:
-      - "8000:8000"
+    command: ["uvicorn", "services.simulation.app:app", "--host", "0.0.0.0", "--port", "8001"]
+    expose:
+      - "8001"
     environment:
-      RUNNER_URL: http://openfoam-runner:8080
+      <<: *otel-environment
+      OTEL_SERVICE_NAME: simulation
+      RUNNER_URL: http://forge-runner:8080
       JOBS_ROOT: /jobs
       MONGODB_URI: mongodb://mongo:27017
-      MONGODB_DB: openfoam_web
-      CORS_ORIGINS: http://localhost:3000,http://127.0.0.1:3000
+      MONGODB_DB: forge_web
     volumes:
       - jobs_data:/jobs
     depends_on:
       mongo:
         condition: service_healthy
-      openfoam-runner:
+      forge-runner:
         condition: service_started
+      <<: *otel-depends
 
-  ai:
+  pss:
     build:
-      context: ./ai
+      context: ./backend
+    command: ["uvicorn", "services.pss.app:app", "--host", "0.0.0.0", "--port", "8003"]
+    expose:
+      - "8003"
+    environment:
+      <<: *otel-environment
+      OTEL_SERVICE_NAME: pss
+      MONGODB_URI: mongodb://mongo:27017
+      MONGODB_DB: forge_web
+      SIMULATION_SERVICE_URL: http://simulation:8001
+      PSS_MODELS_ROOT: /pss_models
+    volumes:
+      - pss_models:/pss_models
+    depends_on:
+      mongo:
+        condition: service_healthy
+      simulation:
+        condition: service_started
+      <<: *otel-depends
+
+  bff:
+    build:
+      context: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      <<: *otel-environment
+      OTEL_SERVICE_NAME: bff
+      SIMULATION_SERVICE_URL: http://simulation:8001
+      PSS_SERVICE_URL: http://pss:8003
+      CCS_SERVICE_URL: http://ccs:8081
+      TRAME_VIEWER_URL: http://trame-viewer:8090
+      CORS_ORIGINS: http://localhost:3000,http://127.0.0.1:3000
+    depends_on:
+      simulation:
+        condition: service_started
+      pss:
+        condition: service_started
+      ccs:
+        condition: service_started
+      trame-viewer:
+        condition: service_started
+      <<: *otel-depends
+
+  ccs:
+    build:
+      context: ./backend
     restart: unless-stopped
+    command: ["uvicorn", "services.ccs.app:app", "--host", "0.0.0.0", "--port", "8081"]
     ports:
       - "8081:8081"
     environment:
+      <<: *otel-environment
+      OTEL_SERVICE_NAME: ccs
       GOOGLE_CLOUD_PROJECT_ID: ${GOOGLE_CLOUD_PROJECT_ID:-composite-dream-427518-b8}
       GOOGLE_APPLICATION_CREDENTIALS: /app/credentials/key.json
-      # Chat model (WebSocket). Image thumbnails: override if a model is unavailable in your region.
       GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.5-flash}
       GEMINI_IMAGE_MODEL: ${GEMINI_IMAGE_MODEL:-gemini-2.5-flash-image}
+      ICS_URL: http://ics:8082
     volumes:
-      - ./ai/credentials/key.json:/app/credentials/key.json:ro
+      - ./backend/credentials/key.json:/app/credentials/key.json:ro
+    depends_on:
+      ics:
+        condition: service_started
+      <<: *otel-depends
+
+  ics:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    command: ["uvicorn", "services.ics.app:app", "--host", "0.0.0.0", "--port", "8082"]
+    expose:
+      - "8082"
+    environment:
+      <<: *otel-environment
+      OTEL_SERVICE_NAME: ics
+      GOOGLE_CLOUD_PROJECT_ID: ${GOOGLE_CLOUD_PROJECT_ID:-composite-dream-427518-b8}
+      GOOGLE_APPLICATION_CREDENTIALS: /app/credentials/key.json
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.5-flash}
+    volumes:
+      - ./backend/credentials/key.json:/app/credentials/key.json:ro
+    depends_on:
+      <<: *otel-depends
 
   frontend:
     build:
       context: ./frontend
       args:
-        # Bump when UI changes but Docker reuses a stale layer (invalidates RUN after COPY).
-        OPENFOAM_UI_BUILD_REV: "3"
+        FORGE_UI_BUILD_REV: "6"
         NEXT_PUBLIC_API_URL: http://localhost:8000
-        NEXT_PUBLIC_TRAME_VIEWER_URL: http://localhost:8090
-        NEXT_PUBLIC_AI_WS_URL: ws://localhost:8081/ws
-        TRAME_INTERNAL_URL: http://trame-viewer:8090
+        BFF_INTERNAL_URL: http://bff:8000
     ports:
       - "3000:3000"
     environment:
       NEXT_PUBLIC_API_URL: http://localhost:8000
-      NEXT_PUBLIC_TRAME_VIEWER_URL: http://localhost:8090
-      NEXT_PUBLIC_AI_WS_URL: ws://localhost:8081/ws
     depends_on:
-      - backend
+      - bff
       - trame-viewer
-      - ai
+      - ccs
 
   trame-viewer:
     build:
-      context: ./trame-viewer
+      context: ./backend/services/trame-viewer
     restart: unless-stopped
     environment:
       JOBS_ROOT: /jobs
-      # Large foamToVTK meshes can exceed the default ~10 MiB ws frame limit and kill the socket.
       TRAME_WS_MAX_MSG_SIZE: "134217728"
-      # Raise wslink heartbeat from default 30 s → 120 s.  Synchronous VTK pipeline
-      # builds can block the event loop long enough to miss a 30 s pong deadline,
-      # causing "No PONG received" disconnects and a white viewer canvas.
       WSLINK_HEART_BEAT: "120"
     volumes:
       - jobs_data:/jobs
@@ -116,5 +371,9 @@ services:
 
 volumes:
   jobs_data:
-    name: openfoam-web-jobs-data
+    name: forge-jobs-data
+  pss_models:
   mongo_data:
+  signoz_clickhouse:
+  signoz_sqlite:
+  signoz_zookeeper:

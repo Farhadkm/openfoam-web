@@ -1,0 +1,291 @@
+[
+  {
+    "id": "job-view-01",
+    "description": "Next timestep",
+    "page_context": "job",
+    "user_message": "Go to the next time step",
+    "viewer_profile": "job_vtk",
+    "expect": {
+      "primary_intent": "results_analysis",
+      "required_tags": [
+        "ViewerCmd"
+      ],
+      "viewer_actions_contains": [
+        "next_time"
+      ],
+      "forbidden_tags": [
+        "UpdateInputs",
+        "SimAction"
+      ]
+    },
+    "expected_output": "ViewerCmd next_time."
+  },
+  {
+    "id": "job-view-02",
+    "description": "Previous timestep",
+    "page_context": "job",
+    "user_message": "Previous timestep please",
+    "viewer_profile": "job_vtk",
+    "expect": {
+      "primary_intent": "results_analysis",
+      "viewer_actions_contains": [
+        "prev_time"
+      ]
+    },
+    "expected_output": "ViewerCmd prev_time."
+  },
+  {
+    "id": "job-view-03",
+    "description": "Set specific time",
+    "page_context": "job",
+    "user_message": "Set time to 0.15",
+    "viewer_profile": "job_vtk",
+    "expect": {
+      "primary_intent": "results_analysis",
+      "required_tags": [
+        "ViewerCmd"
+      ],
+      "viewer_actions_contains": [
+        "set_time"
+      ]
+    },
+    "expected_output": "ViewerCmd set_time with value 0.15."
+  },
+  {
+    "id": "job-view-04",
+    "description": "Play",
+    "page_context": "job",
+    "user_message": "Play the animation",
+    "viewer_profile": "job_vtk",
+    "expect": {
+      "viewer_actions_contains": [
+        "play"
+      ],
+      "forbidden_tags": [
+        "UpdateInputs"
+      ]
+    },
+    "expected_output": "ViewerCmd play."
+  },
+  {
+    "id": "job-view-05",
+    "description": "Pause",
+    "page_context": "job",
+    "user_message": "Pause",
+    "viewer_profile": "job_vtk",
+    "expect": {
+      "viewer_actions_contains": [
+        "pause"
+      ]
+    },
+    "expected_output": "ViewerCmd pause."
+  },
+  {
+    "id": "job-view-06",
+    "description": "Pressure scalar",
+    "page_context": "job",
+    "user_message": "Show pressure",
+    "viewer_profile": "job_vtk",
+    "expect": {
+      "viewer_actions_contains": [
+        "set_scalar"
+      ],
+      "forbidden_tags": [
+        "UpdateInputs"
+      ]
+    },
+    "expected_output": "ViewerCmd set_scalar p."
+  },
+  {
+    "id": "job-view-07",
+    "description": "Velocity scalar",
+    "page_context": "job",
+    "user_message": "Display velocity field",
+    "viewer_profile": "job_vtk",
+    "expect": {
+      "viewer_actions_contains": [
+        "set_scalar"
+      ]
+    },
+    "expected_output": "ViewerCmd set_scalar U."
+  },
+  {
+    "id": "job-view-08",
+    "description": "Toggle streamlines on",
+    "page_context": "job",
+    "user_message": "Turn on streamlines",
+    "viewer_profile": "job_vtk",
+    "expect": {
+      "viewer_actions_contains": [
+        "toggle_streamlines"
+      ]
+    },
+    "expected_output": "ViewerCmd toggle_streamlines true."
+  },
+  {
+    "id": "job-view-09",
+    "description": "Refresh viewer",
+    "page_context": "job",
+    "user_message": "Refresh the viewer",
+    "viewer_profile": "job_vtk",
+    "expect": {
+      "viewer_actions_contains": [
+        "refresh"
+      ]
+    },
+    "expected_output": "ViewerCmd refresh."
+  },
+  {
+    "id": "job-view-10",
+    "description": "Load VTK",
+    "page_context": "job",
+    "user_message": "Load the VTK data",
+    "viewer_profile": "job_vtk",
+    "expect": {
+      "viewer_actions_contains": [
+        "load"
+      ]
+    },
+    "expected_output": "ViewerCmd load."
+  },
+  {
+    "id": "job-view-11",
+    "description": "Set VTK file",
+    "page_context": "job",
+    "user_message": "Switch to walls.vtk",
+    "viewer_profile": "job_vtk",
+    "expect": {
+      "viewer_actions_contains": [
+        "set_file"
+      ]
+    },
+    "expected_output": "ViewerCmd set_file walls.vtk."
+  },
+  {
+    "id": "job-view-12",
+    "description": "Set region",
+    "page_context": "job",
+    "user_message": "Select the fluid region",
+    "viewer_profile": "job_vtk",
+    "expect": {
+      "viewer_actions_contains": [
+        "set_region"
+      ]
+    },
+    "expected_output": "ViewerCmd set_region fluid."
+  },
+  {
+    "id": "job-view-13",
+    "description": "List times informational",
+    "page_context": "job",
+    "user_message": "What time steps are available?",
+    "viewer_profile": "job_vtk",
+    "expect": {
+      "forbidden_tags": [
+        "UpdateInputs",
+        "SimAction"
+      ],
+      "plain_text_non_empty": true
+    },
+    "expected_output": "List times from ViewerState in plain text."
+  },
+  {
+    "id": "job-view-14",
+    "description": "Compare scalars",
+    "page_context": "job",
+    "user_message": "Show alpha.water",
+    "viewer_profile": "job_vtk",
+    "expect": {
+      "viewer_actions_contains": [
+        "set_scalar"
+      ]
+    },
+    "expected_output": "ViewerCmd set_scalar alpha.water."
+  },
+  {
+    "id": "job-forbid-01",
+    "description": "Change parameter on job page",
+    "page_context": "job",
+    "user_message": "Set end time to 10",
+    "viewer_profile": "job_vtk",
+    "expect": {
+      "forbidden_tags": [
+        "UpdateInputs",
+        "SimAction"
+      ],
+      "plain_text_non_empty": true
+    },
+    "expected_output": "Tell user to use Run page for parameter changes.",
+    "geval_criteria": "Must not use UpdateInputs; should direct user back to run simulation page."
+  },
+  {
+    "id": "job-forbid-02",
+    "description": "Re-run on job page",
+    "page_context": "job",
+    "user_message": "Run the simulation again",
+    "viewer_profile": "job_vtk",
+    "expect": {
+      "forbidden_tags": [
+        "SimAction",
+        "UpdateInputs"
+      ],
+      "plain_text_non_empty": true
+    },
+    "expected_output": "Explain re-run is on run page."
+  },
+  {
+    "id": "job-forbid-03",
+    "description": "Reset on job page",
+    "page_context": "job",
+    "user_message": "Reset all inputs",
+    "viewer_profile": "job_vtk",
+    "expect": {
+      "forbidden_tags": [
+        "UpdateInputs",
+        "SimAction"
+      ]
+    },
+    "expected_output": "No reset SimAction on job page."
+  },
+  {
+    "id": "job-forbid-04",
+    "description": "Invalid time not in ViewerState",
+    "page_context": "job",
+    "user_message": "Set time to 99.99",
+    "viewer_profile": "job_vtk",
+    "expect": {
+      "forbidden_tags": [
+        "UpdateInputs"
+      ],
+      "plain_text_non_empty": true
+    },
+    "expected_output": "Warn that 99.99 is not in available times or pick nearest.",
+    "geval_criteria": "Should not invent timesteps; reference ViewerState times list."
+  },
+  {
+    "id": "route-02",
+    "description": "Parameter wording on job page",
+    "page_context": "job",
+    "user_message": "Increase inlet velocity",
+    "viewer_profile": "job_vtk",
+    "expect": {
+      "forbidden_tags": [
+        "UpdateInputs"
+      ]
+    },
+    "expected_output": "Redirect to run page for parameter edits."
+  },
+  {
+    "id": "route-03",
+    "description": "Streamlines off",
+    "page_context": "job",
+    "user_message": "Hide streamlines",
+    "viewer_profile": "job_vtk",
+    "expect": {
+      "viewer_actions_contains": [
+        "toggle_streamlines"
+      ]
+    },
+    "expected_output": "ViewerCmd toggle_streamlines false."
+  }
+]

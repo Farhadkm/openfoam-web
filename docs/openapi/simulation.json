@@ -1,0 +1,1204 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Forge Simulation Service",
+    "description": "Jobs, simulation templates, case files, and runner orchestration (internal; browser uses BFF).",
+    "version": "1.0.0",
+    "x-forge-service": "simulation",
+    "x-forge-label": "Simulation"
+  },
+  "paths": {
+    "/api/jobs/{job_id}/outputs": {
+      "get": {
+        "summary": "Get Job Outputs",
+        "operationId": "simulation.get_job_outputs_api_jobs__job_id__outputs_get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Job Outputs Api Jobs  Job Id  Outputs Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-forge-service": "simulation",
+        "x-forge-original-path": "/api/jobs/{job_id}/outputs"
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Health",
+        "operationId": "simulation.health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Health Health Get"
+                }
+              }
+            }
+          }
+        },
+        "x-forge-service": "simulation",
+        "x-forge-original-path": "/health"
+      }
+    },
+    "/api/run-instructions": {
+      "get": {
+        "summary": "List Run Instructions",
+        "operationId": "simulation.list_run_instructions_api_run_instructions_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response List Run Instructions Api Run Instructions Get"
+                }
+              }
+            }
+          }
+        },
+        "x-forge-service": "simulation",
+        "x-forge-original-path": "/api/run-instructions"
+      },
+      "post": {
+        "summary": "Create Run Instruction",
+        "operationId": "simulation.create_run_instruction_api_run_instructions_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RunInstructionCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Create Run Instruction Api Run Instructions Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-forge-service": "simulation",
+        "x-forge-original-path": "/api/run-instructions"
+      }
+    },
+    "/api/run-instructions/{instruction_id}": {
+      "get": {
+        "summary": "Get Run Instruction",
+        "operationId": "simulation.get_run_instruction_api_run_instructions__instruction_id__get",
+        "parameters": [
+          {
+            "name": "instruction_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Instruction Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Run Instruction Api Run Instructions  Instruction Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-forge-service": "simulation",
+        "x-forge-original-path": "/api/run-instructions/{instruction_id}"
+      },
+      "patch": {
+        "summary": "Update Run Instruction",
+        "operationId": "simulation.update_run_instruction_api_run_instructions__instruction_id__patch",
+        "parameters": [
+          {
+            "name": "instruction_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Instruction Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RunInstructionUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Update Run Instruction Api Run Instructions  Instruction Id  Patch"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-forge-service": "simulation",
+        "x-forge-original-path": "/api/run-instructions/{instruction_id}"
+      },
+      "delete": {
+        "summary": "Delete Run Instruction",
+        "operationId": "simulation.delete_run_instruction_api_run_instructions__instruction_id__delete",
+        "parameters": [
+          {
+            "name": "instruction_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Instruction Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Delete Run Instruction Api Run Instructions  Instruction Id  Delete"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-forge-service": "simulation",
+        "x-forge-original-path": "/api/run-instructions/{instruction_id}"
+      }
+    },
+    "/api/simulations/analyze-zip": {
+      "post": {
+        "summary": "Analyze Zip",
+        "operationId": "simulation.analyze_zip_api_simulations_analyze_zip_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_analyze_zip_api_simulations_analyze_zip_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Analyze Zip Api Simulations Analyze Zip Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-forge-service": "simulation",
+        "x-forge-original-path": "/api/simulations/analyze-zip"
+      }
+    },
+    "/api/simulations": {
+      "get": {
+        "summary": "List Simulations",
+        "operationId": "simulation.list_simulations_api_simulations_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response List Simulations Api Simulations Get"
+                }
+              }
+            }
+          }
+        },
+        "x-forge-service": "simulation",
+        "x-forge-original-path": "/api/simulations"
+      },
+      "post": {
+        "summary": "Create Simulation",
+        "operationId": "simulation.create_simulation_api_simulations_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_create_simulation_api_simulations_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Create Simulation Api Simulations Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-forge-service": "simulation",
+        "x-forge-original-path": "/api/simulations"
+      }
+    },
+    "/api/simulations/{sim_id}": {
+      "get": {
+        "summary": "Get Simulation",
+        "operationId": "simulation.get_simulation_api_simulations__sim_id__get",
+        "parameters": [
+          {
+            "name": "sim_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Sim Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Simulation Api Simulations  Sim Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-forge-service": "simulation",
+        "x-forge-original-path": "/api/simulations/{sim_id}"
+      },
+      "patch": {
+        "summary": "Update Simulation",
+        "operationId": "simulation.update_simulation_api_simulations__sim_id__patch",
+        "parameters": [
+          {
+            "name": "sim_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Sim Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_update_simulation_api_simulations__sim_id__patch"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Update Simulation Api Simulations  Sim Id  Patch"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-forge-service": "simulation",
+        "x-forge-original-path": "/api/simulations/{sim_id}"
+      },
+      "delete": {
+        "summary": "Delete Simulation",
+        "operationId": "simulation.delete_simulation_api_simulations__sim_id__delete",
+        "parameters": [
+          {
+            "name": "sim_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Sim Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Delete Simulation Api Simulations  Sim Id  Delete"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-forge-service": "simulation",
+        "x-forge-original-path": "/api/simulations/{sim_id}"
+      }
+    },
+    "/api/simulations/{sim_id}/case-analysis": {
+      "get": {
+        "summary": "Analyze Simulation Stored Case",
+        "description": "Return the same shape as POST /api/simulations/analyze-zip for the template's stored case.zip.",
+        "operationId": "simulation.analyze_simulation_stored_case_api_simulations__sim_id__case_analysis_get",
+        "parameters": [
+          {
+            "name": "sim_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Sim Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Analyze Simulation Stored Case Api Simulations  Sim Id  Case Analysis Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-forge-service": "simulation",
+        "x-forge-original-path": "/api/simulations/{sim_id}/case-analysis"
+      }
+    },
+    "/api/simulations/{sim_id}/thumbnail": {
+      "get": {
+        "summary": "Get Simulation Thumbnail",
+        "operationId": "simulation.get_simulation_thumbnail_api_simulations__sim_id__thumbnail_get",
+        "parameters": [
+          {
+            "name": "sim_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Sim Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-forge-service": "simulation",
+        "x-forge-original-path": "/api/simulations/{sim_id}/thumbnail"
+      }
+    },
+    "/api/simulations/{sim_id}/run": {
+      "post": {
+        "summary": "Run Simulation",
+        "description": "Create a job from a simulation template, optionally overriding input fields.",
+        "operationId": "simulation.run_simulation_api_simulations__sim_id__run_post",
+        "parameters": [
+          {
+            "name": "sim_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Sim Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "additionalProperties": true
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Run Simulation Api Simulations  Sim Id  Run Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-forge-service": "simulation",
+        "x-forge-original-path": "/api/simulations/{sim_id}/run"
+      }
+    },
+    "/api/jobs": {
+      "get": {
+        "summary": "List Jobs",
+        "operationId": "simulation.list_jobs_api_jobs_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response List Jobs Api Jobs Get"
+                }
+              }
+            }
+          }
+        },
+        "x-forge-service": "simulation",
+        "x-forge-original-path": "/api/jobs"
+      },
+      "post": {
+        "summary": "Create Job",
+        "operationId": "simulation.create_job_api_jobs_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_create_job_api_jobs_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Create Job Api Jobs Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-forge-service": "simulation",
+        "x-forge-original-path": "/api/jobs"
+      }
+    },
+    "/api/jobs/{job_id}": {
+      "get": {
+        "summary": "Get Job",
+        "operationId": "simulation.get_job_api_jobs__job_id__get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Job Api Jobs  Job Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-forge-service": "simulation",
+        "x-forge-original-path": "/api/jobs/{job_id}"
+      }
+    },
+    "/api/jobs/{job_id}/log": {
+      "get": {
+        "summary": "Get Job Log",
+        "operationId": "simulation.get_job_log_api_jobs__job_id__log_get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Job Log Api Jobs  Job Id  Log Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-forge-service": "simulation",
+        "x-forge-original-path": "/api/jobs/{job_id}/log"
+      }
+    },
+    "/api/jobs/{job_id}/download": {
+      "get": {
+        "summary": "Download Job",
+        "operationId": "simulation.download_job_api_jobs__job_id__download_get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-forge-service": "simulation",
+        "x-forge-original-path": "/api/jobs/{job_id}/download"
+      }
+    },
+    "/api/jobs/{job_id}/case/{file_path}": {
+      "get": {
+        "summary": "Get Case File",
+        "operationId": "simulation.get_case_file_api_jobs__job_id__case__file_path__get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "file_path",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "File Path"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-forge-service": "simulation",
+        "x-forge-original-path": "/api/jobs/{job_id}/case/{file_path}"
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Body_analyze_zip_api_simulations_analyze_zip_post": {
+        "properties": {
+          "case_zip": {
+            "type": "string",
+            "format": "binary",
+            "title": "Case Zip"
+          }
+        },
+        "type": "object",
+        "required": [
+          "case_zip"
+        ],
+        "title": "Body_analyze_zip_api_simulations_analyze_zip_post"
+      },
+      "Body_create_job_api_jobs_post": {
+        "properties": {
+          "case_zip": {
+            "type": "string",
+            "format": "binary",
+            "title": "Case Zip"
+          },
+          "commands": {
+            "type": "string",
+            "title": "Commands",
+            "default": ""
+          },
+          "run_instruction_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Instruction Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "case_zip"
+        ],
+        "title": "Body_create_job_api_jobs_post"
+      },
+      "Body_create_simulation_api_simulations_post": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "default": ""
+          },
+          "commands": {
+            "type": "string",
+            "title": "Commands",
+            "default": ""
+          },
+          "input_fields_json": {
+            "type": "string",
+            "title": "Input Fields Json",
+            "default": "[]"
+          },
+          "case_zip": {
+            "type": "string",
+            "format": "binary",
+            "title": "Case Zip"
+          },
+          "thumbnail": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "binary"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Thumbnail"
+          }
+        },
+        "type": "object",
+        "required": [
+          "title",
+          "case_zip"
+        ],
+        "title": "Body_create_simulation_api_simulations_post"
+      },
+      "Body_update_simulation_api_simulations__sim_id__patch": {
+        "properties": {
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "commands": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Commands"
+          },
+          "input_fields_json": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Fields Json"
+          },
+          "thumbnail": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "binary"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Thumbnail"
+          },
+          "case_zip": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "binary"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Case Zip"
+          }
+        },
+        "type": "object",
+        "title": "Body_update_simulation_api_simulations__sim_id__patch"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "RunInstructionCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "commands": {
+            "type": "string",
+            "maxLength": 50000,
+            "minLength": 1,
+            "title": "Commands"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 10000,
+            "title": "Description",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "commands"
+        ],
+        "title": "RunInstructionCreate"
+      },
+      "RunInstructionUpdate": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "commands": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50000,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Commands"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 10000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "title": "RunInstructionUpdate"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "health",
+      "description": "Service health"
+    },
+    {
+      "name": "jobs",
+      "description": "CFD job lifecycle"
+    },
+    {
+      "name": "simulations",
+      "description": "Simulation templates"
+    },
+    {
+      "name": "run-instructions",
+      "description": "Reusable command presets"
+    }
+  ],
+  "servers": [
+    {
+      "url": "http://localhost:8001",
+      "description": "Simulation"
+    }
+  ]
+}

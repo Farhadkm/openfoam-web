@@ -1,0 +1,937 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Forge BFF",
+    "description": "Public API for the Next.js frontend. Proxies job/simulation traffic to the simulation service, conversation/AI traffic to CCS, and the VTK viewer to trame-viewer. Schemas here are stubs; see upstream OpenAPI links in `GET /health`.",
+    "version": "1.0.0",
+    "x-forge-service": "bff",
+    "x-forge-label": "BFF (Gateway)"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "BFF health",
+        "description": "BFF status and downstream simulation/CCS health. Lists links to other services' docs.",
+        "operationId": "bff.health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "x-forge-service": "bff",
+        "x-forge-original-path": "/health"
+      }
+    },
+    "/api/jobs": {
+      "get": {
+        "tags": [
+          "jobs"
+        ],
+        "summary": "List jobs",
+        "description": "List CFD jobs.\n\n**Upstream:** `GET simulation /api/jobs`",
+        "responses": {
+          "200": {
+            "description": "Proxied response (status and body pass through from upstream).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found (upstream)"
+          },
+          "502": {
+            "description": "Upstream unavailable"
+          }
+        },
+        "x-forge-service": "bff",
+        "x-forge-original-path": "/api/jobs"
+      },
+      "post": {
+        "tags": [
+          "jobs"
+        ],
+        "summary": "Create job (upload case ZIP)",
+        "description": "Multipart upload of a case archive.\n\n**Upstream:** `POST simulation /api/jobs`",
+        "responses": {
+          "200": {
+            "description": "Proxied response (status and body pass through from upstream).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found (upstream)"
+          },
+          "502": {
+            "description": "Upstream unavailable"
+          }
+        },
+        "x-forge-service": "bff",
+        "x-forge-original-path": "/api/jobs"
+      }
+    },
+    "/api/jobs/{job_id}": {
+      "get": {
+        "tags": [
+          "jobs"
+        ],
+        "summary": "Get job",
+        "description": "Job metadata and status.\n\n**Upstream:** `GET simulation /api/jobs/{job_id}`",
+        "responses": {
+          "200": {
+            "description": "Proxied response (status and body pass through from upstream).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found (upstream)"
+          },
+          "502": {
+            "description": "Upstream unavailable"
+          }
+        },
+        "x-forge-service": "bff",
+        "x-forge-original-path": "/api/jobs/{job_id}"
+      }
+    },
+    "/api/jobs/{job_id}/log": {
+      "get": {
+        "tags": [
+          "jobs"
+        ],
+        "summary": "Get job log",
+        "description": "Solver log text.\n\n**Upstream:** `GET simulation /api/jobs/{job_id}/log`",
+        "responses": {
+          "200": {
+            "description": "Proxied response (status and body pass through from upstream).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found (upstream)"
+          },
+          "502": {
+            "description": "Upstream unavailable"
+          }
+        },
+        "x-forge-service": "bff",
+        "x-forge-original-path": "/api/jobs/{job_id}/log"
+      }
+    },
+    "/api/jobs/{job_id}/outputs": {
+      "get": {
+        "tags": [
+          "jobs"
+        ],
+        "summary": "List job outputs",
+        "description": "Time directories, regions, VTK/foam flags.\n\n**Upstream:** `GET simulation /api/jobs/{job_id}/outputs`",
+        "responses": {
+          "200": {
+            "description": "Proxied response (status and body pass through from upstream).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found (upstream)"
+          },
+          "502": {
+            "description": "Upstream unavailable"
+          }
+        },
+        "x-forge-service": "bff",
+        "x-forge-original-path": "/api/jobs/{job_id}/outputs"
+      }
+    },
+    "/api/jobs/{job_id}/download": {
+      "get": {
+        "tags": [
+          "jobs"
+        ],
+        "summary": "Download case archive",
+        "description": "ZIP download of the job case directory.\n\n**Upstream:** `GET simulation /api/jobs/{job_id}/download`",
+        "responses": {
+          "200": {
+            "description": "Proxied binary response from upstream.",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        },
+        "x-forge-service": "bff",
+        "x-forge-original-path": "/api/jobs/{job_id}/download"
+      }
+    },
+    "/api/jobs/{job_id}/case/{file_path}": {
+      "get": {
+        "tags": [
+          "jobs"
+        ],
+        "summary": "Read case file",
+        "description": "Fetch a file under the job case tree.\n\n**Upstream:** `GET simulation /api/jobs/{job_id}/case/{file_path}`",
+        "responses": {
+          "200": {
+            "description": "Proxied response (status and body pass through from upstream).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found (upstream)"
+          },
+          "502": {
+            "description": "Upstream unavailable"
+          }
+        },
+        "x-forge-service": "bff",
+        "x-forge-original-path": "/api/jobs/{job_id}/case/{file_path}"
+      }
+    },
+    "/api/simulations": {
+      "get": {
+        "tags": [
+          "simulations"
+        ],
+        "summary": "List simulations",
+        "description": "Simulation templates.\n\n**Upstream:** `GET simulation /api/simulations`",
+        "responses": {
+          "200": {
+            "description": "Proxied response (status and body pass through from upstream).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found (upstream)"
+          },
+          "502": {
+            "description": "Upstream unavailable"
+          }
+        },
+        "x-forge-service": "bff",
+        "x-forge-original-path": "/api/simulations"
+      },
+      "post": {
+        "tags": [
+          "simulations"
+        ],
+        "summary": "Create simulation",
+        "description": "Create template (multipart).\n\n**Upstream:** `POST simulation /api/simulations`",
+        "responses": {
+          "200": {
+            "description": "Proxied response (status and body pass through from upstream).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found (upstream)"
+          },
+          "502": {
+            "description": "Upstream unavailable"
+          }
+        },
+        "x-forge-service": "bff",
+        "x-forge-original-path": "/api/simulations"
+      }
+    },
+    "/api/simulations/analyze-zip": {
+      "post": {
+        "tags": [
+          "simulations"
+        ],
+        "summary": "Analyze case ZIP",
+        "description": "Inspect archive before creating a simulation.\n\n**Upstream:** `POST simulation /api/simulations/analyze-zip`",
+        "responses": {
+          "200": {
+            "description": "Proxied response (status and body pass through from upstream).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found (upstream)"
+          },
+          "502": {
+            "description": "Upstream unavailable"
+          }
+        },
+        "x-forge-service": "bff",
+        "x-forge-original-path": "/api/simulations/analyze-zip"
+      }
+    },
+    "/api/simulations/{sim_id}": {
+      "get": {
+        "tags": [
+          "simulations"
+        ],
+        "summary": "Get simulation",
+        "description": "Template metadata.\n\n**Upstream:** `GET simulation /api/simulations/{sim_id}`",
+        "responses": {
+          "200": {
+            "description": "Proxied response (status and body pass through from upstream).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found (upstream)"
+          },
+          "502": {
+            "description": "Upstream unavailable"
+          }
+        },
+        "x-forge-service": "bff",
+        "x-forge-original-path": "/api/simulations/{sim_id}"
+      },
+      "patch": {
+        "tags": [
+          "simulations"
+        ],
+        "summary": "Update simulation",
+        "description": "Update template fields.\n\n**Upstream:** `PATCH simulation /api/simulations/{sim_id}`",
+        "responses": {
+          "200": {
+            "description": "Proxied response (status and body pass through from upstream).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found (upstream)"
+          },
+          "502": {
+            "description": "Upstream unavailable"
+          }
+        },
+        "x-forge-service": "bff",
+        "x-forge-original-path": "/api/simulations/{sim_id}"
+      },
+      "delete": {
+        "tags": [
+          "simulations"
+        ],
+        "summary": "Delete simulation",
+        "description": "Remove template.\n\n**Upstream:** `DELETE simulation /api/simulations/{sim_id}`",
+        "responses": {
+          "200": {
+            "description": "Proxied response (status and body pass through from upstream).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found (upstream)"
+          },
+          "502": {
+            "description": "Upstream unavailable"
+          }
+        },
+        "x-forge-service": "bff",
+        "x-forge-original-path": "/api/simulations/{sim_id}"
+      }
+    },
+    "/api/simulations/{sim_id}/run": {
+      "post": {
+        "tags": [
+          "simulations"
+        ],
+        "summary": "Run simulation",
+        "description": "Start a job from this template.\n\n**Upstream:** `POST simulation /api/simulations/{sim_id}/run`",
+        "responses": {
+          "200": {
+            "description": "Proxied response (status and body pass through from upstream).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found (upstream)"
+          },
+          "502": {
+            "description": "Upstream unavailable"
+          }
+        },
+        "x-forge-service": "bff",
+        "x-forge-original-path": "/api/simulations/{sim_id}/run"
+      }
+    },
+    "/api/simulations/{sim_id}/thumbnail": {
+      "get": {
+        "tags": [
+          "simulations"
+        ],
+        "summary": "Simulation thumbnail",
+        "description": "PNG thumbnail image.\n\n**Upstream:** `GET simulation /api/simulations/{sim_id}/thumbnail`",
+        "responses": {
+          "200": {
+            "description": "Proxied binary response from upstream.",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        },
+        "x-forge-service": "bff",
+        "x-forge-original-path": "/api/simulations/{sim_id}/thumbnail"
+      }
+    },
+    "/api/simulations/{sim_id}/case-analysis": {
+      "get": {
+        "tags": [
+          "simulations"
+        ],
+        "summary": "Case analysis",
+        "description": "Parsed case structure for the UI.\n\n**Upstream:** `GET simulation /api/simulations/{sim_id}/case-analysis`",
+        "responses": {
+          "200": {
+            "description": "Proxied response (status and body pass through from upstream).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found (upstream)"
+          },
+          "502": {
+            "description": "Upstream unavailable"
+          }
+        },
+        "x-forge-service": "bff",
+        "x-forge-original-path": "/api/simulations/{sim_id}/case-analysis"
+      }
+    },
+    "/api/run-instructions": {
+      "get": {
+        "tags": [
+          "run-instructions"
+        ],
+        "summary": "List run instructions",
+        "description": "Reusable command presets.\n\n**Upstream:** `GET simulation /api/run-instructions`",
+        "responses": {
+          "200": {
+            "description": "Proxied response (status and body pass through from upstream).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found (upstream)"
+          },
+          "502": {
+            "description": "Upstream unavailable"
+          }
+        },
+        "x-forge-service": "bff",
+        "x-forge-original-path": "/api/run-instructions"
+      },
+      "post": {
+        "tags": [
+          "run-instructions"
+        ],
+        "summary": "Create run instruction",
+        "description": "Create a preset.\n\n**Upstream:** `POST simulation /api/run-instructions`",
+        "responses": {
+          "200": {
+            "description": "Proxied response (status and body pass through from upstream).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found (upstream)"
+          },
+          "502": {
+            "description": "Upstream unavailable"
+          }
+        },
+        "x-forge-service": "bff",
+        "x-forge-original-path": "/api/run-instructions"
+      }
+    },
+    "/api/run-instructions/{instruction_id}": {
+      "get": {
+        "tags": [
+          "run-instructions"
+        ],
+        "summary": "Get run instruction",
+        "description": "Single preset.\n\n**Upstream:** `GET simulation /api/run-instructions/{instruction_id}`",
+        "responses": {
+          "200": {
+            "description": "Proxied response (status and body pass through from upstream).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found (upstream)"
+          },
+          "502": {
+            "description": "Upstream unavailable"
+          }
+        },
+        "x-forge-service": "bff",
+        "x-forge-original-path": "/api/run-instructions/{instruction_id}"
+      },
+      "patch": {
+        "tags": [
+          "run-instructions"
+        ],
+        "summary": "Update run instruction",
+        "description": "Update preset fields.\n\n**Upstream:** `PATCH simulation /api/run-instructions/{instruction_id}`",
+        "responses": {
+          "200": {
+            "description": "Proxied response (status and body pass through from upstream).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found (upstream)"
+          },
+          "502": {
+            "description": "Upstream unavailable"
+          }
+        },
+        "x-forge-service": "bff",
+        "x-forge-original-path": "/api/run-instructions/{instruction_id}"
+      },
+      "delete": {
+        "tags": [
+          "run-instructions"
+        ],
+        "summary": "Delete run instruction",
+        "description": "Remove preset.\n\n**Upstream:** `DELETE simulation /api/run-instructions/{instruction_id}`",
+        "responses": {
+          "200": {
+            "description": "Proxied response (status and body pass through from upstream).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found (upstream)"
+          },
+          "502": {
+            "description": "Upstream unavailable"
+          }
+        },
+        "x-forge-service": "bff",
+        "x-forge-original-path": "/api/run-instructions/{instruction_id}"
+      }
+    },
+    "/api/conversations": {
+      "get": {
+        "tags": [
+          "conversations"
+        ],
+        "summary": "List conversations",
+        "description": "AI chat conversations.\n\n**Upstream:** `GET ccs /api/conversations`",
+        "responses": {
+          "200": {
+            "description": "Proxied response (status and body pass through from upstream).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found (upstream)"
+          },
+          "502": {
+            "description": "Upstream unavailable"
+          }
+        },
+        "x-forge-service": "bff",
+        "x-forge-original-path": "/api/conversations"
+      },
+      "post": {
+        "tags": [
+          "conversations"
+        ],
+        "summary": "Create conversation",
+        "description": "Start a new conversation.\n\n**Upstream:** `POST ccs /api/conversations`",
+        "responses": {
+          "200": {
+            "description": "Proxied response (status and body pass through from upstream).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found (upstream)"
+          },
+          "502": {
+            "description": "Upstream unavailable"
+          }
+        },
+        "x-forge-service": "bff",
+        "x-forge-original-path": "/api/conversations"
+      }
+    },
+    "/api/conversations/{conversation_id}": {
+      "get": {
+        "tags": [
+          "conversations"
+        ],
+        "summary": "Get conversation",
+        "description": "Conversation with messages.\n\n**Upstream:** `GET ccs /api/conversations/{conversation_id}`",
+        "responses": {
+          "200": {
+            "description": "Proxied response (status and body pass through from upstream).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found (upstream)"
+          },
+          "502": {
+            "description": "Upstream unavailable"
+          }
+        },
+        "x-forge-service": "bff",
+        "x-forge-original-path": "/api/conversations/{conversation_id}"
+      },
+      "delete": {
+        "tags": [
+          "conversations"
+        ],
+        "summary": "Delete conversation",
+        "description": "Remove conversation.\n\n**Upstream:** `DELETE ccs /api/conversations/{conversation_id}`",
+        "responses": {
+          "200": {
+            "description": "Proxied response (status and body pass through from upstream).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found (upstream)"
+          },
+          "502": {
+            "description": "Upstream unavailable"
+          }
+        },
+        "x-forge-service": "bff",
+        "x-forge-original-path": "/api/conversations/{conversation_id}"
+      }
+    },
+    "/api/conversations/{conversation_id}/messages": {
+      "get": {
+        "tags": [
+          "conversations"
+        ],
+        "summary": "List messages",
+        "description": "Message history for a conversation.\n\n**Upstream:** `GET ccs /api/conversations/{conversation_id}/messages`",
+        "responses": {
+          "200": {
+            "description": "Proxied response (status and body pass through from upstream).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found (upstream)"
+          },
+          "502": {
+            "description": "Upstream unavailable"
+          }
+        },
+        "x-forge-service": "bff",
+        "x-forge-original-path": "/api/conversations/{conversation_id}/messages"
+      }
+    },
+    "/api/ai/generate-thumbnail": {
+      "post": {
+        "tags": [
+          "ai"
+        ],
+        "summary": "Generate thumbnail (AI)",
+        "description": "PNG thumbnail via Vertex image model.\n\n**Upstream:** `POST ccs /generate-thumbnail`",
+        "responses": {
+          "200": {
+            "description": "Proxied binary response from upstream.",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        },
+        "x-forge-service": "bff",
+        "x-forge-original-path": "/api/ai/generate-thumbnail"
+      }
+    },
+    "/viewer": {
+      "get": {
+        "tags": [
+          "viewer"
+        ],
+        "summary": "Trame viewer (root)",
+        "description": "VTK iframe entrypoint.\n\n**Upstream:** `GET trame-viewer /`",
+        "responses": {
+          "200": {
+            "description": "Proxied HTML/assets from trame-viewer.",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "x-forge-service": "bff",
+        "x-forge-original-path": "/viewer"
+      }
+    },
+    "/viewer/{path}": {
+      "get": {
+        "tags": [
+          "viewer"
+        ],
+        "summary": "Trame viewer assets",
+        "description": "Static assets and subpaths under the viewer app.\n\n**Upstream:** `GET trame-viewer /{path}`",
+        "responses": {
+          "200": {
+            "description": "Proxied HTML/assets from trame-viewer.",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "x-forge-service": "bff",
+        "x-forge-original-path": "/viewer/{path}"
+      }
+    },
+    "/api/jobs/{job_id}/ws": {
+      "get": {
+        "tags": [
+          "jobs"
+        ],
+        "summary": "Job log stream (WebSocket)",
+        "description": "Live tail of solver logs for a job.\n\n**WebSocket** \u2014 connect with `ws://` or `wss://`. **Upstream:** `WS simulation /api/jobs/{job_id}/ws`",
+        "responses": {
+          "101": {
+            "description": "Switching Protocols (WebSocket upgrade)"
+          }
+        },
+        "x-forge-service": "bff",
+        "x-forge-original-path": "/api/jobs/{job_id}/ws"
+      }
+    },
+    "/api/ai/ws": {
+      "get": {
+        "tags": [
+          "ai"
+        ],
+        "summary": "AI chat (WebSocket)",
+        "description": "Streaming chat (`init`, `user_message`, `update_context`).\n\n**WebSocket** \u2014 connect with `ws://` or `wss://`. **Upstream:** `WS ccs /ws`",
+        "responses": {
+          "101": {
+            "description": "Switching Protocols (WebSocket upgrade)"
+          }
+        },
+        "x-forge-service": "bff",
+        "x-forge-original-path": "/api/ai/ws"
+      }
+    },
+    "/viewer/ws": {
+      "get": {
+        "tags": [
+          "viewer"
+        ],
+        "summary": "Trame wslink (WebSocket)",
+        "description": "VTK remote rendering session.\n\n**WebSocket** \u2014 connect with `ws://` or `wss://`. **Upstream:** `WS trame-viewer /ws`",
+        "responses": {
+          "101": {
+            "description": "Switching Protocols (WebSocket upgrade)"
+          }
+        },
+        "x-forge-service": "bff",
+        "x-forge-original-path": "/viewer/ws"
+      }
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "BFF (Gateway)"
+    }
+  ],
+  "x-tagGroups": [
+    {
+      "name": "Health",
+      "tags": [
+        "health"
+      ]
+    },
+    {
+      "name": "Jobs & simulations",
+      "tags": [
+        "jobs",
+        "simulations",
+        "run-instructions"
+      ]
+    },
+    {
+      "name": "Conversations & AI",
+      "tags": [
+        "conversations",
+        "ai"
+      ]
+    },
+    {
+      "name": "Viewer",
+      "tags": [
+        "viewer"
+      ]
+    }
+  ]
+}

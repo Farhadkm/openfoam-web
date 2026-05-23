@@ -34,9 +34,7 @@ resource "aws_ecr_repository" "services" {
   for_each = toset([
     "frontend",
     "backend",
-    "ai",
     "trame-viewer",
-    "openfoam-runner",
   ])
   name                 = "${local.name_prefix}-${each.key}"
   image_tag_mutability = "MUTABLE"
@@ -182,7 +180,7 @@ resource "aws_security_group" "app" {
     cidr_blocks = var.allowed_ingress_cidrs
   }
   ingress {
-    description = "AI WebSocket"
+    description = "CCS WebSocket (chat)"
     from_port   = 8081
     to_port     = 8081
     protocol    = "tcp"
@@ -216,23 +214,23 @@ locals {
     mkdir -p /usr/local/lib/docker/cli-plugins
     curl -fsSL "https://github.com/docker/compose/releases/download/v2.32.4/docker-compose-linux-x86_64" -o /usr/local/lib/docker/cli-plugins/docker-compose
     chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
-    mkdir -p /opt/openfoam-web/ai/credentials
+    mkdir -p /opt/forge-web/backend/credentials
     IMDS_TOKEN=$(curl -sS -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
     PUBLIC_HOST=$(curl -sS -H "X-aws-ec2-metadata-token: $IMDS_TOKEN" http://169.254.169.254/latest/meta-data/public-hostname)
     aws configure set default.region ${var.aws_region}
-    aws s3 cp "s3://${aws_s3_bucket.config.id}/docker-compose.aws-dev.yml" /opt/openfoam-web/docker-compose.aws-dev.yml
-    sed -i "s|__PUBLIC_HOST__|$PUBLIC_HOST|g" /opt/openfoam-web/docker-compose.aws-dev.yml
+    aws s3 cp "s3://${aws_s3_bucket.config.id}/docker-compose.aws-dev.yml" /opt/forge-web/docker-compose.aws-dev.yml
+    sed -i "s|__PUBLIC_HOST__|$PUBLIC_HOST|g" /opt/forge-web/docker-compose.aws-dev.yml
     %{if var.gemini_secret_arn != ""}
-    aws secretsmanager get-secret-value --secret-id "${var.gemini_secret_arn}" --query SecretString --output text > /opt/openfoam-web/ai/credentials/key.json
+    aws secretsmanager get-secret-value --secret-id "${var.gemini_secret_arn}" --query SecretString --output text > /opt/forge-web/backend/credentials/key.json
     %{else}
-    echo "{}" > /opt/openfoam-web/ai/credentials/key.json
+    echo "{}" > /opt/forge-web/backend/credentials/key.json
     %{endif}
-    echo "ECR_REGISTRY=${local.ecr_registry}" > /opt/openfoam-web/.env
-    echo "GOOGLE_CLOUD_PROJECT_ID=composite-dream-427518-b8" >> /opt/openfoam-web/.env
-    chown -R ec2-user:ec2-user /opt/openfoam-web
+    echo "ECR_REGISTRY=${local.ecr_registry}" > /opt/forge-web/.env
+    echo "GOOGLE_CLOUD_PROJECT_ID=composite-dream-427518-b8" >> /opt/forge-web/.env
+    chown -R ec2-user:ec2-user /opt/forge-web
     TOKEN=$(aws ecr get-login-password --region ${var.aws_region})
     echo "$TOKEN" | docker login --username AWS --password-stdin ${local.ecr_registry}
-    cd /opt/openfoam-web
+    cd /opt/forge-web
     export ECR_REGISTRY=${local.ecr_registry}
     export PUBLIC_HOST="$PUBLIC_HOST"
     docker compose --env-file .env -f docker-compose.aws-dev.yml pull || true

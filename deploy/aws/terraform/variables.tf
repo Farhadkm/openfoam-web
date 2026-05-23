@@ -7,7 +7,7 @@ variable "aws_region" {
 variable "project" {
   type        = string
   description = "Short project prefix for resource names."
-  default     = "openfoam-web"
+  default     = "forge-web"
 }
 
 variable "environment" {

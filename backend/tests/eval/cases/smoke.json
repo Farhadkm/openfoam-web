@@ -1,0 +1,126 @@
+[
+  {
+    "id": "run-param-01",
+    "description": "Set end time explicitly",
+    "page_context": "run",
+    "user_message": "Set the end time to 5",
+    "fields_profile": "water_pipe",
+    "expect": {
+      "primary_intent": "parameter_configuration",
+      "required_tags": [
+        "UpdateInputs"
+      ],
+      "forbidden_tags": [
+        "ViewerCmd"
+      ],
+      "update_inputs_contains": {
+        "system/controlDict::endTime": "5"
+      },
+      "plain_text_non_empty": true
+    },
+    "expected_output": "UpdateInputs with system/controlDict::endTime set to 5.",
+    "geval_criteria": "Response must use UpdateInputs to set end time to 5 and confirm in plain text."
+  },
+  {
+    "id": "run-exec-01",
+    "description": "Start simulation",
+    "page_context": "run",
+    "user_message": "Run the simulation",
+    "fields_profile": "water_pipe",
+    "expect": {
+      "primary_intent": "simulation_execution",
+      "required_tags": [
+        "SimAction"
+      ],
+      "sim_actions_contains": [
+        "start_simulation"
+      ],
+      "forbidden_tags": [
+        "ViewerCmd"
+      ]
+    },
+    "expected_output": "SimAction start_simulation."
+  },
+  {
+    "id": "run-casual-01",
+    "description": "Greeting",
+    "page_context": "run",
+    "user_message": "Hello",
+    "fields_profile": "water_pipe",
+    "expect": {
+      "forbidden_tags": [
+        "ViewerCmd",
+        "UpdateInputs",
+        "SimAction"
+      ],
+      "plain_text_non_empty": true
+    },
+    "expected_output": "CasualMessage or friendly plain text."
+  },
+  {
+    "id": "job-view-01",
+    "description": "Next timestep",
+    "page_context": "job",
+    "user_message": "Go to the next time step",
+    "viewer_profile": "job_vtk",
+    "expect": {
+      "primary_intent": "results_analysis",
+      "required_tags": [
+        "ViewerCmd"
+      ],
+      "viewer_actions_contains": [
+        "next_time"
+      ],
+      "forbidden_tags": [
+        "UpdateInputs",
+        "SimAction"
+      ]
+    },
+    "expected_output": "ViewerCmd next_time."
+  },
+  {
+    "id": "job-forbid-01",
+    "description": "Change parameter on job page",
+    "page_context": "job",
+    "user_message": "Set end time to 10",
+    "viewer_profile": "job_vtk",
+    "expect": {
+      "forbidden_tags": [
+        "UpdateInputs",
+        "SimAction"
+      ],
+      "plain_text_non_empty": true
+    },
+    "expected_output": "Tell user to use Run page for parameter changes.",
+    "geval_criteria": "Must not use UpdateInputs; should direct user back to run simulation page."
+  },
+  {
+    "id": "route-01",
+    "description": "Analysis wording on run page",
+    "page_context": "run",
+    "user_message": "Plot the pressure field from the results",
+    "fields_profile": "water_pipe",
+    "expect": {
+      "forbidden_tags": [
+        "ViewerCmd"
+      ],
+      "plain_text_non_empty": true
+    },
+    "expected_output": "Explain results are on the Job page after the simulation finishes."
+  },
+  {
+    "id": "run-param-14",
+    "description": "Viewer request forbidden on run page",
+    "page_context": "run",
+    "user_message": "Show pressure in the VTK viewer",
+    "fields_profile": "water_pipe",
+    "expect": {
+      "forbidden_tags": [
+        "ViewerCmd"
+      ],
+      "plain_text_non_empty": true
+    },
+    "expected_output": "Explain visualization is on the Job page after the run.",
+    "geval_criteria": "Must not emit ViewerCmd; should redirect user to job visualization page."
+  }
+]

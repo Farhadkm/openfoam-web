@@ -6,7 +6,7 @@ Document first-time setup here. Prefer standard commands over duplicated shell s
 
 ```bash
 cp .env.example .env          # optional overrides
-mkdir -p ai/credentials       # place key.json for Vertex (do not commit)
+mkdir -p backend/credentials       # place key.json for Vertex (do not commit)
 docker compose up --build
 ```
 

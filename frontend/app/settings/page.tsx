@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { ForgeSelect } from "@/app/components/ui/ForgeSelect";
 
 const FONT_SIZES = [
   { value: "12", label: "Small (12px)" },
@@ -16,14 +17,14 @@ const LANGUAGES = [
 function loadSettings() {
   if (typeof window === "undefined") return { fontSize: "14", language: "en" };
   try {
-    const raw = localStorage.getItem("openfoam_settings");
+    const raw = localStorage.getItem("forge_settings");
     if (raw) return JSON.parse(raw) as { fontSize: string; language: string };
   } catch { /* ignore */ }
   return { fontSize: "14", language: "en" };
 }
 
 function saveSettings(s: { fontSize: string; language: string }) {
-  localStorage.setItem("openfoam_settings", JSON.stringify(s));
+  localStorage.setItem("forge_settings", JSON.stringify(s));
 }
 
 function applyFontSize(size: string) {
@@ -72,28 +73,28 @@ export default function SettingsPage() {
 
         <div className="settings-group">
           <label htmlFor="font-size">Font Size</label>
-          <select
+          <ForgeSelect
             id="font-size"
             value={fontSize}
-            onChange={(e) => {
-              setFontSize(e.target.value);
-              applyFontSize(e.target.value);
+            onChange={(v) => {
+              setFontSize(v);
+              applyFontSize(v);
             }}
-          >
-            {FONT_SIZES.map((f) => (
-              <option key={f.value} value={f.value}>{f.label}</option>
-            ))}
-          </select>
+            options={FONT_SIZES}
+            aria-label="Font size"
+          />
           <small className="hint">Adjusts the base font size across the application.</small>
         </div>
 
         <div className="settings-group" style={{ marginTop: 20 }}>
           <label htmlFor="language">Language</label>
-          <select id="language" value={language} onChange={(e) => setLanguage(e.target.value)}>
-            {LANGUAGES.map((l) => (
-              <option key={l.value} value={l.value}>{l.label}</option>
-            ))}
-          </select>
+          <ForgeSelect
+            id="language"
+            value={language}
+            onChange={setLanguage}
+            options={LANGUAGES}
+            aria-label="Language"
+          />
           <small className="hint">More languages will be available in future updates.</small>
         </div>
 

@@ -7,7 +7,7 @@ alwaysApply: true
 
 ## Secrets
 
-- **Never** commit `ai/credentials/key.json`, `.env` with real keys, or Terraform state with secrets
+- **Never** commit `backend/credentials/key.json`, `.env` with real keys, or Terraform state with secrets
 - GCP: `GOOGLE_APPLICATION_CREDENTIALS` → mounted JSON; AWS dev: Secrets Manager via `gemini_secret_arn` (see `deploy/aws/README.md`)
 - GitHub Actions: use repository/environment secrets only (`AWS_*`, `DEV_*`, etc.)
 

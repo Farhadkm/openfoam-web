@@ -1,6 +1,7 @@
 "use client";
 
 import type { DiscoveredVariable, ZipAnalysis } from "@/lib/api";
+import { ForgeSelect } from "@/app/components/ui/ForgeSelect";
 
 export type SelectedDiscoveredVar = DiscoveredVariable & {
   label: string;
@@ -15,6 +16,8 @@ type Props = {
   onToggleVar: (v: DiscoveredVariable) => void;
   onUpdateVar: (key: string, patch: Partial<SelectedDiscoveredVar>) => void;
   varKey: (v: DiscoveredVariable) => string;
+  /** When "result", copy explains completed-case outputs instead of run-time inputs. */
+  mode?: "input" | "result";
 };
 
 export function DiscoveredParametersPicker({
@@ -23,6 +26,7 @@ export function DiscoveredParametersPicker({
   onToggleVar,
   onUpdateVar,
   varKey,
+  mode = "input",
 }: Props) {
   const groupedVars: Record<string, DiscoveredVariable[]> = {};
   for (const v of analysis.discovered_variables) {
@@ -32,7 +36,9 @@ export function DiscoveredParametersPicker({
   return (
     <>
       <p style={{ fontSize: 13, color: "var(--text-secondary)", margin: "0 0 16px" }}>
-        Choose which discovered variables users can adjust when running this simulation.
+        {mode === "result"
+          ? "Choose which values to display after a run completes (read from the job case on disk)."
+          : "Choose which discovered variables users can adjust when running this simulation."}
       </p>
 
       {analysis.discovered_variables.length === 0 ? (
@@ -78,17 +84,19 @@ export function DiscoveredParametersPicker({
                         </div>
                         <div className="var-config-field">
                           <label>Type</label>
-                          <select
+                          <ForgeSelect
                             value={sel.fieldType}
-                            onChange={(e) =>
+                            onChange={(v) =>
                               onUpdateVar(k, {
-                                fieldType: e.target.value as "number" | "text",
+                                fieldType: v as "number" | "text",
                               })
                             }
-                          >
-                            <option value="number">Number</option>
-                            <option value="text">Text</option>
-                          </select>
+                            options={[
+                              { value: "number", label: "Number" },
+                              { value: "text", label: "Text" },
+                            ]}
+                            aria-label="Parameter type"
+                          />
                         </div>
                         {sel.fieldType === "number" && (
                           <>

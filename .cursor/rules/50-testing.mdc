@@ -14,7 +14,7 @@ alwaysApply: false
 ## Before merging significant changes
 
 - Backend: `http://localhost:8000/docs` — job create, status, download
-- Runner: job log written under `/jobs/<id>/openfoam.log`
+- Runner: job log written under `/jobs/<id>/forge.log`
 - Trame: job with `case/VTK/` visualizes; check `NEXT_PUBLIC_TRAME_VIEWER_URL`
 - AI: `GET :8081/health` and WebSocket chat with valid Vertex credentials
 

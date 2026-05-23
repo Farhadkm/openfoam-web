@@ -130,6 +130,9 @@ export type SimulationInputField = {
   options?: string[];
 };
 
+/** Same shape as input fields; values are read from completed job case output. */
+export type SimulationResultField = SimulationInputField;
+
 export type Simulation = {
   id: string;
   title: string;
@@ -138,8 +141,18 @@ export type Simulation = {
   case_zip_path: string;
   thumbnail_url: string;
   input_fields: SimulationInputField[];
+  result_fields: SimulationResultField[];
+  has_result_zip: boolean;
   created_at: string;
   updated_at: string;
+};
+
+export type JobResultFieldValue = {
+  key: string;
+  label: string;
+  type: string;
+  value: string;
+  error?: string;
 };
 
 export async function fetchSimulations() {
@@ -159,7 +172,9 @@ export async function createSimulation(data: {
   description: string;
   commands: string;
   input_fields: SimulationInputField[];
+  result_fields?: SimulationResultField[];
   case_zip: File;
+  result_zip?: File;
   thumbnail?: File;
 }) {
   const fd = new FormData();
@@ -167,7 +182,9 @@ export async function createSimulation(data: {
   fd.append("description", data.description);
   fd.append("commands", data.commands);
   fd.append("input_fields_json", JSON.stringify(data.input_fields));
+  fd.append("result_fields_json", JSON.stringify(data.result_fields ?? []));
   fd.append("case_zip", data.case_zip);
+  if (data.result_zip) fd.append("result_zip", data.result_zip);
   if (data.thumbnail) fd.append("thumbnail", data.thumbnail);
   const r = await fetch(`${base}/api/simulations`, { method: "POST", body: fd });
   if (!r.ok) throw new Error(await r.text());
@@ -195,9 +212,12 @@ export async function updateSimulation(
     description?: string;
     commands?: string;
     input_fields?: SimulationInputField[];
+    result_fields?: SimulationResultField[];
     thumbnail?: File;
     /** When set, replaces stored template case.zip on the server. */
     case_zip?: File;
+    /** When set, replaces stored result case.zip on the server. */
+    result_zip?: File;
   },
 ) {
   const fd = new FormData();
@@ -206,8 +226,11 @@ export async function updateSimulation(
   if (data.commands !== undefined) fd.append("commands", data.commands);
   if (data.input_fields !== undefined)
     fd.append("input_fields_json", JSON.stringify(data.input_fields));
+  if (data.result_fields !== undefined)
+    fd.append("result_fields_json", JSON.stringify(data.result_fields));
   if (data.thumbnail) fd.append("thumbnail", data.thumbnail);
   if (data.case_zip) fd.append("case_zip", data.case_zip);
+  if (data.result_zip) fd.append("result_zip", data.result_zip);
   const r = await fetch(`${base}/api/simulations/${encodeURIComponent(simId)}`, {
     method: "PATCH",
     body: fd,
@@ -224,14 +247,115 @@ export async function deleteSimulation(simId: string) {
   return r.json() as Promise<{ ok: boolean; id: string }>;
 }
 
-const aiBase =
-  (typeof window !== "undefined"
-    ? process.env.NEXT_PUBLIC_AI_WS_URL?.replace(/^ws/, "http")?.replace(/\/ws\/?$/, "")
-    : null) || "http://localhost:8081";
+export type Conversation = {
+  id: string;
+  title: string;
+  page_context: "run" | "job";
+  created_at: string;
+  updated_at: string;
+  message_count: number;
+};
 
-/** Ask the AI service for a thumbnail; the server builds the image brief from title + description. */
+export type ConversationMessage = {
+  role: "user" | "assistant" | "system";
+  content: string;
+  created_at: string;
+};
+
+export async function fetchConversations() {
+  const r = await fetch(`${base}/api/conversations`, { cache: "no-store" });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json() as Promise<{ conversations: Conversation[] }>;
+}
+
+export async function createConversation(body?: {
+  title?: string;
+  page_context?: "run" | "job";
+}) {
+  const r = await fetch(`${base}/api/conversations`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      title: body?.title ?? "",
+      page_context: body?.page_context ?? "run",
+    }),
+  });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json() as Promise<Conversation>;
+}
+
+export async function fetchConversation(id: string) {
+  const r = await fetch(`${base}/api/conversations/${encodeURIComponent(id)}`, {
+    cache: "no-store",
+  });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json() as Promise<Conversation & { messages: ConversationMessage[] }>;
+}
+
+export async function deleteConversation(id: string) {
+  const r = await fetch(`${base}/api/conversations/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+  });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json() as Promise<{ ok: boolean; id: string }>;
+}
+
+export async function fetchConversationMessages(id: string) {
+  const r = await fetch(`${base}/api/conversations/${encodeURIComponent(id)}/messages`, {
+    cache: "no-store",
+  });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json() as Promise<{ conversation_id: string; messages: ConversationMessage[] }>;
+}
+
+export type TroubleshootRequest = {
+  job_id: string;
+  log: string;
+  job: {
+    status: string;
+    returncode: number | null;
+    error_message: string | null;
+    commands?: string;
+  };
+  simulation?: {
+    title: string;
+    commands: string;
+    input_fields: SimulationInputField[];
+    result_fields: SimulationResultField[];
+  } | null;
+  inputs_applied?: Record<string, string> | null;
+  fatal_hints?: string[];
+};
+
+export type TroubleshootResponse = {
+  guide: string;
+  job_id: string;
+};
+
+/** One-shot job log troubleshooting via CCS (no ICS routing). */
+export async function requestJobTroubleshoot(body: TroubleshootRequest) {
+  const r = await fetch(`${base}/api/ai/troubleshoot`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!r.ok) {
+    const txt = await r.text();
+    let msg = txt || "Troubleshooting failed";
+    try {
+      const j = JSON.parse(txt) as { detail?: string };
+      if (typeof j.detail === "string" && j.detail) msg = j.detail;
+    } catch {
+      /* use raw */
+    }
+    throw new Error(msg);
+  }
+  return r.json() as Promise<TroubleshootResponse>;
+}
+
+/** Ask CCS (via BFF) for a thumbnail; the server builds the image brief from title + description. */
 export async function generateAiThumbnail(title: string, description: string) {
-  const r = await fetch(`${aiBase}/generate-thumbnail`, {
+  const r = await fetch(`${base}/api/ai/generate-thumbnail`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ title: title.trim(), description: description.trim() }),
@@ -285,7 +409,217 @@ export async function analyzeZip(file: File) {
   return r.json() as Promise<ZipAnalysis>;
 }
 
+export async function analyzeResultZip(file: File) {
+  const fd = new FormData();
+  fd.append("case_zip", file);
+  const r = await fetch(`${base}/api/simulations/analyze-result-zip`, { method: "POST", body: fd });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json() as Promise<ZipAnalysis>;
+}
+
 /** Analyze the case.zip already stored for this simulation template (edit flow). */
+// ── Mass run ──
+
+export type MassRunInput = { label: string; value: string };
+
+export type MassRunPreviewRun = {
+  index: number;
+  inputs: MassRunInput[];
+};
+
+export type MassRunPreview = {
+  simulation_id: string;
+  simulation_title: string;
+  total_runs: number;
+  field_labels: string[];
+  runs: MassRunPreviewRun[];
+};
+
+export type MassRunRun = MassRunPreviewRun & {
+  job_id?: string | null;
+  status?: string;
+  returncode?: number | null;
+  error_message?: string | null;
+};
+
+export type MassRun = {
+  id: string;
+  simulation_id: string;
+  simulation_title: string;
+  batch_size: number;
+  total_runs: number;
+  completed_runs: number;
+  failed_runs: number;
+  runs: MassRunRun[];
+  status: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type MassRunListItem = Omit<MassRun, "runs">;
+
+export async function previewMassRun(simId: string, csvFile: File) {
+  const fd = new FormData();
+  fd.append("csv_file", csvFile);
+  const r = await fetch(
+    `${base}/api/simulations/${encodeURIComponent(simId)}/mass-run/preview`,
+    { method: "POST", body: fd },
+  );
+  if (!r.ok) throw new Error(await r.text());
+  return r.json() as Promise<MassRunPreview>;
+}
+
+export async function startMassRun(
+  simId: string,
+  body: { batch_size: number; runs: MassRunPreviewRun[] },
+) {
+  const r = await fetch(`${base}/api/simulations/${encodeURIComponent(simId)}/mass-run`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json() as Promise<{ id: string; status: string; total_runs: number }>;
+}
+
+export async function fetchMassRuns(simulationId?: string) {
+  const q = simulationId
+    ? `?simulation_id=${encodeURIComponent(simulationId)}`
+    : "";
+  const r = await fetch(`${base}/api/mass-runs${q}`, { cache: "no-store" });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json() as Promise<{ mass_runs: MassRunListItem[] }>;
+}
+
+export async function fetchMassRun(massRunId: string) {
+  const r = await fetch(`${base}/api/mass-runs/${encodeURIComponent(massRunId)}`, {
+    cache: "no-store",
+  });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json() as Promise<MassRun>;
+}
+
+export function massRunDownloadUrl(massRunId: string) {
+  return `${base}/api/mass-runs/${encodeURIComponent(massRunId)}/download`;
+}
+
+export function massRunResultsCsvUrl(massRunId: string) {
+  return `${base}/api/mass-runs/${encodeURIComponent(massRunId)}/results.csv`;
+}
+
+// ── Simulation predictive model ──
+
+export type PredictiveModelConfig = {
+  simulation_id: string;
+  training_mass_run_ids: string[];
+  testing_mass_run_ids: string[];
+  updated_at: string | null;
+};
+
+export async function fetchPredictiveModel(simId: string) {
+  const r = await fetch(
+    `${base}/api/simulations/${encodeURIComponent(simId)}/predictive-model`,
+    { cache: "no-store" },
+  );
+  if (!r.ok) throw new Error(await r.text());
+  return r.json() as Promise<PredictiveModelConfig>;
+}
+
+export async function savePredictiveModel(
+  simId: string,
+  body: Pick<PredictiveModelConfig, "training_mass_run_ids" | "testing_mass_run_ids">,
+) {
+  const r = await fetch(
+    `${base}/api/simulations/${encodeURIComponent(simId)}/predictive-model`,
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    },
+  );
+  if (!r.ok) throw new Error(await r.text());
+  return r.json() as Promise<PredictiveModelConfig>;
+}
+
+// ── PSS trained models (XGBoost) ──
+
+export type PssModelMetrics = {
+  per_target: Record<string, { rmse: number | null; mae: number | null; r2: number | null }>;
+  aggregate: { rmse: number | null; mae: number | null; r2: number | null };
+  note?: string;
+};
+
+export type PssTrainedModel = {
+  id: string;
+  simulation_id: string;
+  technique: string;
+  training_mass_run_ids: string[];
+  testing_mass_run_ids: string[];
+  feature_columns: string[];
+  target_keys: string[];
+  metrics: PssModelMetrics;
+  n_train_rows: number;
+  n_test_rows: number;
+  created_at: string;
+  summary_metrics?: { rmse: number | null; mae: number | null; r2: number | null };
+};
+
+export async function fetchPssModels(simId: string) {
+  const r = await fetch(
+    `${base}/api/simulations/${encodeURIComponent(simId)}/predictive-models`,
+    { cache: "no-store" },
+  );
+  if (!r.ok) throw new Error(await r.text());
+  return r.json() as Promise<{ simulation_id: string; models: PssTrainedModel[] }>;
+}
+
+export async function trainPssModel(
+  simId: string,
+  body?: {
+    technique?: "xgboost";
+    training_mass_run_ids?: string[];
+    testing_mass_run_ids?: string[];
+  },
+) {
+  const r = await fetch(
+    `${base}/api/simulations/${encodeURIComponent(simId)}/predictive-models/train`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ technique: "xgboost", ...body }),
+    },
+  );
+  if (!r.ok) throw new Error(await r.text());
+  return r.json() as Promise<PssTrainedModel>;
+}
+
+export async function fetchPssModel(modelId: string) {
+  const r = await fetch(`${base}/api/predictive-models/${encodeURIComponent(modelId)}`, {
+    cache: "no-store",
+  });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json() as Promise<PssTrainedModel>;
+}
+
+export async function predictWithPssModel(modelId: string, inputs: Record<string, string>) {
+  const r = await fetch(
+    `${base}/api/predictive-models/${encodeURIComponent(modelId)}/predict`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ inputs }),
+    },
+  );
+  if (!r.ok) throw new Error(await r.text());
+  return r.json() as Promise<{
+    model_id: string;
+    simulation_id: string;
+    predicted: boolean;
+    fields: JobResultFieldValue[];
+    values: Record<string, string>;
+  }>;
+}
+
 export async function fetchSimulationTemplateAnalysis(simId: string) {
   const r = await fetch(
     `${base}/api/simulations/${encodeURIComponent(simId)}/case-analysis`,
@@ -293,4 +627,21 @@ export async function fetchSimulationTemplateAnalysis(simId: string) {
   );
   if (!r.ok) throw new Error(await r.text());
   return r.json() as Promise<ZipAnalysis>;
+}
+
+export async function fetchSimulationResultAnalysis(simId: string) {
+  const r = await fetch(
+    `${base}/api/simulations/${encodeURIComponent(simId)}/result-case-analysis`,
+    { cache: "no-store" },
+  );
+  if (!r.ok) throw new Error(await r.text());
+  return r.json() as Promise<ZipAnalysis>;
+}
+
+export async function fetchJobResultFields(jobId: string) {
+  const r = await fetch(`${base}/api/jobs/${encodeURIComponent(jobId)}/result-fields`, {
+    cache: "no-store",
+  });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json() as Promise<{ fields: JobResultFieldValue[] }>;
 }

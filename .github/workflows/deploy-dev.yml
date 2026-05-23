@@ -36,41 +36,23 @@ jobs:
         id: reg
         run: echo "uri=${{ steps.ecr.outputs.registry }}" >> "$GITHUB_OUTPUT"
 
-      - name: Build and push openfoam-runner
-        working-directory: openfoam-runner
-        run: |
-          REG="${{ steps.reg.outputs.uri }}"
-          IMG="$REG/openfoam-web-dev-openfoam-runner:${GITHUB_SHA::8}"
-          docker build --platform linux/amd64 -t "$IMG" -t "$REG/openfoam-web-dev-openfoam-runner:latest" .
-          docker push "$IMG"
-          docker push "$REG/openfoam-web-dev-openfoam-runner:latest"
-
       - name: Build and push backend
         working-directory: backend
         run: |
           REG="${{ steps.reg.outputs.uri }}"
-          IMG="$REG/openfoam-web-dev-backend:${GITHUB_SHA::8}"
-          docker build --platform linux/amd64 -t "$IMG" -t "$REG/openfoam-web-dev-backend:latest" .
+          IMG="$REG/forge-web-dev-backend:${GITHUB_SHA::8}"
+          docker build --platform linux/amd64 -t "$IMG" -t "$REG/forge-web-dev-backend:latest" .
           docker push "$IMG"
-          docker push "$REG/openfoam-web-dev-backend:latest"
+          docker push "$REG/forge-web-dev-backend:latest"
 
       - name: Build and push trame-viewer
-        working-directory: trame-viewer
+        working-directory: backend/services/trame-viewer
         run: |
           REG="${{ steps.reg.outputs.uri }}"
-          IMG="$REG/openfoam-web-dev-trame-viewer:${GITHUB_SHA::8}"
-          docker build --platform linux/amd64 -t "$IMG" -t "$REG/openfoam-web-dev-trame-viewer:latest" .
+          IMG="$REG/forge-web-dev-trame-viewer:${GITHUB_SHA::8}"
+          docker build --platform linux/amd64 -t "$IMG" -t "$REG/forge-web-dev-trame-viewer:latest" .
           docker push "$IMG"
-          docker push "$REG/openfoam-web-dev-trame-viewer:latest"
-
-      - name: Build and push AI
-        working-directory: ai
-        run: |
-          REG="${{ steps.reg.outputs.uri }}"
-          IMG="$REG/openfoam-web-dev-ai:${GITHUB_SHA::8}"
-          docker build --platform linux/amd64 -t "$IMG" -t "$REG/openfoam-web-dev-ai:latest" .
-          docker push "$IMG"
-          docker push "$REG/openfoam-web-dev-ai:latest"
+          docker push "$REG/forge-web-dev-trame-viewer:latest"
 
       - name: Build and push frontend
         working-directory: frontend
@@ -82,16 +64,13 @@ jobs:
             exit 1
           fi
           REG="${{ steps.reg.outputs.uri }}"
-          IMG="$REG/openfoam-web-dev-frontend:${GITHUB_SHA::8}"
+          IMG="$REG/forge-web-dev-frontend:${GITHUB_SHA::8}"
           docker build --platform linux/amd64 \
-            --build-arg OPENFOAM_UI_BUILD_REV="${GITHUB_SHA::8}" \
+            --build-arg FORGE_UI_BUILD_REV="${GITHUB_SHA::8}" \
             --build-arg NEXT_PUBLIC_API_URL="http://${HOST}:8000" \
-            --build-arg NEXT_PUBLIC_TRAME_VIEWER_URL="http://${HOST}:8090" \
-            --build-arg NEXT_PUBLIC_AI_WS_URL="ws://${HOST}:8081/ws" \
-            --build-arg TRAME_INTERNAL_URL="http://trame-viewer:8090" \
-            -t "$IMG" -t "$REG/openfoam-web-dev-frontend:latest" .
+            -t "$IMG" -t "$REG/forge-web-dev-frontend:latest" .
           docker push "$IMG"
-          docker push "$REG/openfoam-web-dev-frontend:latest"
+          docker push "$REG/forge-web-dev-frontend:latest"
 
       - name: Redeploy on EC2 (SSM)
         env:
@@ -106,7 +85,7 @@ jobs:
               sys.exit(0)
 
           script = r"""set -euxo pipefail
-          cd /opt/openfoam-web
+          cd /opt/forge-web
           set -a
           [ -f .env ] && . ./.env
           set +a
@@ -130,7 +109,7 @@ jobs:
                   "--parameters",
                   "file:///tmp/ssm-params.json",
                   "--comment",
-                  "openfoam-web dev redeploy",
+                  "forge-web dev redeploy",
               ]
           )
           PY

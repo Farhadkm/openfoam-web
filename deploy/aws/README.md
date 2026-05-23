@@ -1,6 +1,6 @@
-# AWS dev environment (OpenFOAM web)
+# AWS dev environment (Forge)
 
-This folder defines a **development-only** stack: ECR repositories, an S3 bucket for the compose file, and a single **EC2** host running Docker Compose (same topology as local `docker-compose.yml`, including Docker-in-Docker for `openfoam-runner`).
+This folder defines a **development-only** stack: ECR repositories, an S3 bucket for the compose file, and a single **EC2** host running Docker Compose (same topology as local `docker-compose.yml`, including Docker-in-Docker for `forge-runner`).
 
 There is **no production** Terraform or workflow in this repository.
 
@@ -24,12 +24,12 @@ Optional:
 |--------|---------|
 | `GEMINI_IMAGE_MODEL` | Override image model tag for AI Dockerfile build (defaults in Dockerfile) |
 
-**Vertex / chatbot credentials:** the AI container expects a real **GCP service account JSON** (field `"type": "service_account"`, plus `project_id`, `private_key`, etc.). Set Terraform variable `gemini_secret_arn` to an AWS **Secrets Manager** secret whose **SecretString** is that whole JSON document. On first boot the instance writes it to `ai/credentials/key.json`. If `gemini_secret_arn` is unset, bootstrap writes **`{}`**, which is **not** valid Google credentials — Vertex then fails with *“Type is None, expected one of …”* and the bot will not work until you add a proper secret and re-bootstrap or replace the file on the host.
+**Vertex / chatbot credentials:** the AI container expects a real **GCP service account JSON** (field `"type": "service_account"`, plus `project_id`, `private_key`, etc.). Set Terraform variable `gemini_secret_arn` to an AWS **Secrets Manager** secret whose **SecretString** is that whole JSON document. On first boot the instance writes it to `backend/credentials/key.json`. If `gemini_secret_arn` is unset, bootstrap writes **`{}`**, which is **not** valid Google credentials — Vertex then fails with *“Type is None, expected one of …”* and the bot will not work until you add a proper secret and re-bootstrap or replace the file on the host.
 
 Example (create secret once, then set `gemini_secret_arn` in `terraform.tfvars` and `terraform apply`; new instances or SSM re-run of user-data steps pick it up):
 
 ```bash
-aws secretsmanager create-secret --name openfoam-web-dev-gemini-sa \
+aws secretsmanager create-secret --name forge-web-dev-gemini-sa \
   --secret-string file:///path/to/your-service-account.json
 ```
 
@@ -51,7 +51,7 @@ Copy outputs into GitHub secrets `DEV_PUBLIC_HOST` and `DEV_EC2_INSTANCE_ID`, th
 ```bash
 aws ssm start-session --target "$(terraform output -raw dev_instance_id)"
 sudo -i
-cd /opt/openfoam-web
+cd /opt/forge-web
 source .env
 aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin "$ECR_REGISTRY"
 docker compose --env-file .env -f docker-compose.aws-dev.yml pull
@@ -63,15 +63,15 @@ docker compose --env-file .env -f docker-compose.aws-dev.yml up -d
 Workflow: `.github/workflows/deploy-dev.yml`  
 Trigger: **push** to branch `develop` only (no `main` / prod deploy).
 
-It configures AWS with `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY`, builds **linux/amd64** images, pushes to the `openfoam-web-dev-*` ECR repos, then runs an SSM command on `DEV_EC2_INSTANCE_ID` to pull and restart compose.
+It configures AWS with `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY`, builds **linux/amd64** images, pushes to the `forge-web-dev-*` ECR repos, then runs an SSM command on `DEV_EC2_INSTANCE_ID` to pull and restart compose.
 
 ## CORS
 
 The compose file substitutes `__PUBLIC_HOST__` with the instance public hostname at boot. `DEV_PUBLIC_HOST` in CI must match that host so browser-built URLs align with the backend CORS list.
 
-## Jobs volume (OpenFOAM runs)
+## Jobs volume (solver runs)
 
-The backend and Trame store cases under the Compose volume `jobs_data` (mounted at `/jobs`). The runner must pass **the same Docker volume name** into child OpenFOAM containers (`JOBS_VOLUME_NAME`). If those names differ, the solver container can see an empty `case/` directory and fail with `./Allrun: No such file or directory` even though the ZIP uploaded correctly. This repo pins the host volume name to `openfoam-web-jobs-data` in `docker-compose.aws-dev.yml` so backend, runner, and child containers stay aligned. After changing volume naming, restart compose on the host; you may remove orphaned volumes (for example `openfoam_jobs_data`) with `docker volume ls` / `docker volume rm` if you no longer need them.
+The backend and Trame store cases under the Compose volume `jobs_data` (mounted at `/jobs`). The runner must pass **the same Docker volume name** into child solver containers (`JOBS_VOLUME_NAME`). If those names differ, the solver container can see an empty `case/` directory and fail with `./Allrun: No such file or directory` even though the ZIP uploaded correctly. This repo pins the host volume name to `forge-jobs-data` in `docker-compose.aws-dev.yml` so backend, runner, and child containers stay aligned. After changing volume naming, restart compose on the host; you may remove orphaned volumes (for example `forge_jobs_data`) with `docker volume ls` / `docker volume rm` if you no longer need them.
 
 ## Costs
 

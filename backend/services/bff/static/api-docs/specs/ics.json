@@ -1,0 +1,173 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Intent Classification Service",
+    "description": "Classifies chat messages by intent for CCS (internal; not proxied by BFF).",
+    "version": "1.0.0",
+    "x-forge-service": "ics",
+    "x-forge-label": "ICS"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Health",
+        "operationId": "ics.health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "x-forge-service": "ics",
+        "x-forge-original-path": "/health"
+      }
+    },
+    "/intents": {
+      "get": {
+        "summary": "List Intents",
+        "operationId": "ics.list_intents_intents_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "x-forge-service": "ics",
+        "x-forge-original-path": "/intents"
+      }
+    },
+    "/classify": {
+      "post": {
+        "summary": "Classify",
+        "operationId": "ics.classify_classify_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClassifyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-forge-service": "ics",
+        "x-forge-original-path": "/classify"
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ClassifyRequest": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "maxLength": 20000,
+            "minLength": 1,
+            "title": "Message"
+          },
+          "page_context": {
+            "type": "string",
+            "pattern": "^(run|job)$",
+            "title": "Page Context",
+            "default": "run"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "ClassifyRequest"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "health",
+      "description": "Service health and intent catalog"
+    },
+    {
+      "name": "classification",
+      "description": "Intent classification"
+    }
+  ],
+  "servers": [
+    {
+      "url": "http://ics:8082",
+      "description": "ICS"
+    }
+  ]
+}

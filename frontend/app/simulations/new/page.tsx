@@ -11,10 +11,12 @@ import { SimulationWizardDetailsStep } from "@/app/components/simulation/Simulat
 import { WizardStepsBar } from "@/app/components/simulation/WizardStepsBar";
 import { SIMULATION_WIZARD_LABELS } from "@/app/components/simulation/simulationWizardLabels";
 import {
+  analyzeResultZip,
   analyzeZip,
   createSimulation,
   type DiscoveredVariable,
   type SimulationInputField,
+  type SimulationResultField,
   type ZipAnalysis,
 } from "@/lib/api";
 import { defaultCommandsFromZipAnalysis } from "@/lib/zipAnalysisCommands";
@@ -32,6 +34,12 @@ export default function NewSimulationPage() {
   const [analysis, setAnalysis] = useState<ZipAnalysis | null>(null);
 
   const [selected, setSelected] = useState<Map<string, SelectedDiscoveredVar>>(new Map());
+
+  const [resultCaseFile, setResultCaseFile] = useState<File | null>(null);
+  const [analyzingResult, setAnalyzingResult] = useState(false);
+  const [resultAnalysis, setResultAnalysis] = useState<ZipAnalysis | null>(null);
+  const [resultSelected, setResultSelected] = useState<Map<string, SelectedDiscoveredVar>>(new Map());
+  const [resultExpandedDirs, setResultExpandedDirs] = useState<Set<string>>(new Set());
 
   const [commands, setCommands] = useState("");
   const [step, setStep] = useState(1);
@@ -109,12 +117,20 @@ export default function NewSimulationPage() {
         ...(v.min ? { min: v.min } : {}),
         ...(v.max ? { max: v.max } : {}),
       }));
+      const resultFields: SimulationResultField[] = Array.from(resultSelected.values()).map((v) => ({
+        key: `${v.file}::${v.key}`,
+        label: v.label,
+        type: v.fieldType,
+        default: v.value,
+      }));
       await createSimulation({
         title: title.trim(),
         description: description.trim(),
         commands: commands.trim(),
         input_fields: inputFields,
+        result_fields: resultFields,
         case_zip: caseFile,
+        result_zip: resultCaseFile ?? undefined,
         thumbnail: thumbnail ?? undefined,
       });
       router.push("/");
@@ -125,13 +141,69 @@ export default function NewSimulationPage() {
     }
   };
 
+  const handleResultUpload = async (file: File) => {
+    setResultCaseFile(file);
+    setAnalyzingResult(true);
+    setResultAnalysis(null);
+    setResultSelected(new Map());
+    try {
+      const result = await analyzeResultZip(file);
+      setResultAnalysis(result);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to analyze result ZIP");
+    } finally {
+      setAnalyzingResult(false);
+    }
+  };
+
+  const resultVarKey = (v: DiscoveredVariable) => `${v.file}::${v.key}`;
+
+  const toggleResultVar = (v: DiscoveredVariable) => {
+    setResultSelected((prev) => {
+      const next = new Map(prev);
+      const k = resultVarKey(v);
+      if (next.has(k)) {
+        next.delete(k);
+      } else {
+        next.set(k, {
+          ...v,
+          label: v.key.replace(/([A-Z])/g, " $1").replace(/^./, (s) => s.toUpperCase()),
+          fieldType: v.type === "number" ? "number" : "text",
+          min: "",
+          max: "",
+        });
+      }
+      return next;
+    });
+  };
+
+  const updateResultVar = (k: string, patch: Partial<SelectedDiscoveredVar>) => {
+    setResultSelected((prev) => {
+      const next = new Map(prev);
+      const cur = next.get(k);
+      if (cur) next.set(k, { ...cur, ...patch });
+      return next;
+    });
+  };
+
+  const toggleResultDir = (dir: string) => {
+    setResultExpandedDirs((prev) => {
+      const next = new Set(prev);
+      if (next.has(dir)) next.delete(dir);
+      else next.add(dir);
+      return next;
+    });
+  };
+
   const canGoStep2 = title.trim().length > 0;
   const canGoStep3 = !!analysis && commands.trim().length > 0;
+  const canGoStep4 = true;
+  const canGoStep5 = true;
 
   return (
     <>
       <div className="page-desc">
-        Create a new simulation template by uploading an OpenFOAM case and configuring adjustable
+        Create a new simulation template by uploading an CFD case and configuring adjustable
         parameters.
       </div>
 
@@ -172,7 +244,7 @@ export default function NewSimulationPage() {
         <SimulationWizardCaseFileStep
           panelTitle="Upload Case File"
           zipInputId="case-zip"
-          zipLabel="OpenFOAM Case ZIP"
+          zipLabel="Case ZIP"
           zipRequired
           hint="ZIP containing system/, constant/, and initial condition directories."
           onZipSelected={(f) => void handleUpload(f)}
@@ -218,10 +290,94 @@ export default function NewSimulationPage() {
             <button type="button" className="secondary" onClick={() => setStep(2)}>
               Back
             </button>
-            <button type="button" disabled={creating} onClick={() => void handleCreate()}>
-              {creating ? "Creating…" : "Create Simulation"}
+            <button type="button" onClick={() => setStep(4)}>
+              Next: Result Case
             </button>
           </div>
+        </section>
+      )}
+
+      {step === 4 && (
+        <SimulationWizardCaseFileStep
+          panelTitle="Result Case (optional)"
+          zipInputId="result-case-zip"
+          zipLabel="Completed case ZIP"
+          zipRequired={false}
+          hint="Optional: upload a finished case so Forge can discover which outputs to show after runs."
+          onZipSelected={(f) => void handleResultUpload(f)}
+          selectedFileName={resultCaseFile?.name ?? null}
+          onClearSelected={() => {
+            setResultCaseFile(null);
+            setResultAnalysis(null);
+            setResultSelected(new Map());
+          }}
+          analyzing={analyzingResult}
+          analysis={resultAnalysis}
+          expandedDirs={resultExpandedDirs}
+          onToggleDir={toggleResultDir}
+          commands=""
+          onCommandsChange={() => {}}
+          showCommands={false}
+          footer={
+            <div className="wizard-nav" style={{ marginTop: 16 }}>
+              <button type="button" className="secondary" onClick={() => setStep(3)}>
+                Back
+              </button>
+              <button
+                type="button"
+                disabled={!canGoStep4}
+                onClick={() => (resultAnalysis ? setStep(5) : void handleCreate())}
+              >
+                {resultAnalysis ? "Next: Result Fields" : "Create Simulation"}
+              </button>
+            </div>
+          }
+        />
+      )}
+
+      {step === 5 && (
+        <section className="panel">
+          <div className="panel-header">
+            <div className="section-title" style={{ margin: 0 }}>Result Fields</div>
+            <span style={{ fontSize: 12, color: "var(--muted)" }}>
+              {resultSelected.size} selected
+            </span>
+          </div>
+
+          {!resultAnalysis ? (
+            <>
+              <p style={{ fontSize: 13, color: "var(--text-secondary)", margin: "0 0 16px" }}>
+                No result case uploaded. You can create the simulation now or go back to upload one.
+              </p>
+              <div className="wizard-nav" style={{ marginTop: 24 }}>
+                <button type="button" className="secondary" onClick={() => setStep(4)}>
+                  Back
+                </button>
+                <button type="button" disabled={creating} onClick={() => void handleCreate()}>
+                  {creating ? "Creating…" : "Create Simulation"}
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <DiscoveredParametersPicker
+                analysis={resultAnalysis}
+                selected={resultSelected}
+                onToggleVar={toggleResultVar}
+                onUpdateVar={updateResultVar}
+                varKey={resultVarKey}
+                mode="result"
+              />
+              <div className="wizard-nav" style={{ marginTop: 24 }}>
+                <button type="button" className="secondary" onClick={() => setStep(4)}>
+                  Back
+                </button>
+                <button type="button" disabled={creating || !canGoStep5} onClick={() => void handleCreate()}>
+                  {creating ? "Creating…" : "Create Simulation"}
+                </button>
+              </div>
+            </>
+          )}
         </section>
       )}
     </>

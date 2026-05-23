@@ -14,7 +14,7 @@ Automated: push to branch `develop`.
 Manual on EC2 (after SSM login):
 
 ```bash
-cd /opt/openfoam-web
+cd /opt/forge-web
 source .env
 aws ecr get-login-password --region <region> | docker login --username AWS --password-stdin "$ECR_REGISTRY"
 docker compose --env-file .env -f docker-compose.aws-dev.yml pull

@@ -23,7 +23,7 @@ Full procedure: [deploy/aws/README.md](../../deploy/aws/README.md).
 
 ## Image list (ECR)
 
-frontend, backend, ai, trame-viewer, openfoam-runner — see Terraform `aws_ecr_repository.services`.
+frontend, backend, trame-viewer — see Terraform `aws_ecr_repository.services` (runner uses the backend image).
 
 ## Rollback
 

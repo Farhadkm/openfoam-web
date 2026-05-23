@@ -1,10 +1,10 @@
 /** Messages iframe (Trame) → parent (React). */
 export type TrameStateMessage = {
-  type: "openfoam-trame-state";
+  type: "forge-trame-state";
   payload: TrameViewerSnapshot;
 };
 
-/** Snapshot pushed from the Trame Python viewer (see trame-viewer/app.py). */
+/** Snapshot pushed from the Trame Python viewer (see backend/services/trame-viewer/app.py). */
 export type TrameViewerSnapshot = {
   jobId: string;
   region: string;
@@ -25,9 +25,9 @@ export type TrameViewerSnapshot = {
 
 /** Parent (React) → iframe (Trame bridge script). */
 export type TrameParentMessage =
-  | { type: "openfoam-trame-set-job"; jobId: string; autoLoad?: boolean }
-  | { type: "openfoam-trame-patch-state"; patch: Record<string, unknown> }
-  | { type: "openfoam-trame-cmd"; cmd: "prev" | "next" | "load" | "toggle_play" | "refresh" };
+  | { type: "forge-trame-set-job"; jobId: string; autoLoad?: boolean }
+  | { type: "forge-trame-patch-state"; patch: Record<string, unknown> }
+  | { type: "forge-trame-cmd"; cmd: "prev" | "next" | "load" | "toggle_play" | "refresh" };
 
 export function postToTrameViewer(win: Window | null | undefined, msg: TrameParentMessage, origin: string) {
   if (!win) return;

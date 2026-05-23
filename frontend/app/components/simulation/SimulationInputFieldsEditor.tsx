@@ -1,6 +1,7 @@
 "use client";
 
 import type { SimulationInputField } from "@/lib/api";
+import { ForgeSelect } from "@/app/components/ui/ForgeSelect";
 
 type Props = {
   fields: SimulationInputField[];
@@ -56,18 +57,20 @@ export function SimulationInputFieldsEditor({ fields, onChange }: Props) {
                 </div>
                 <div className="var-config-field">
                   <label>Type</label>
-                  <select
+                  <ForgeSelect
                     value={f.type}
-                    onChange={(e) =>
+                    onChange={(v) =>
                       updateField(i, {
-                        type: e.target.value as "number" | "text" | "select",
+                        type: v as "number" | "text" | "select",
                       })
                     }
-                  >
-                    <option value="number">Number</option>
-                    <option value="text">Text</option>
-                    <option value="select">Select</option>
-                  </select>
+                    options={[
+                      { value: "number", label: "Number" },
+                      { value: "text", label: "Text" },
+                      { value: "select", label: "Select" },
+                    ]}
+                    aria-label="Field type"
+                  />
                 </div>
                 <div className="var-config-field">
                   <label>Default</label>
